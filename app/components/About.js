@@ -7,14 +7,13 @@ export default function About() {
   const [activeTab, setActiveTab] = useState("about");
 
   return (
-    <section id="about" className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4">
+    <section id="about" className="py-20 bg-white w-full flex justify-center">
+      <div className="w-full max-w-screen-2xl mx-auto px-4">
 
         {/* Title */}
         <motion.h2
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: false, amount: 0.3 }}
           className="text-3xl md:text-4xl font-bold text-center text-black"
@@ -26,7 +25,6 @@ export default function About() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           viewport={{ once: false, amount: 0.2 }}
           className="flex justify-center mt-8 space-x-3"
@@ -49,7 +47,7 @@ export default function About() {
         </motion.div>
 
         {/* Content */}
-        <div className="mt-14">
+        <div className="mt-14 flex justify-center">
           <AnimatePresence mode="wait">
             {activeTab === "about" && (
               <motion.div
@@ -59,16 +57,14 @@ export default function About() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: false, amount: 0.2 }}
-                className="grid md:grid-cols-2 gap-12 items-center"
+                className="grid md:grid-cols-2 gap-10 items-center w-full max-w-5xl mx-auto"
               >
                 {/* Text */}
                 <motion.div
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.6 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  className="text-gray-700 space-y-5 leading-relaxed"
+                  className="text-gray-700 space-y-5 leading-relaxed text-base sm:text-lg lg:text-xl text-center md:text-left"
                 >
                   <p>
                     PT. CESCO Offshore and Engineering aims to be the leading provider of
@@ -86,15 +82,13 @@ export default function About() {
                 <motion.div
                   initial={{ opacity: 0, x: 30 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 30 }}
                   transition={{ duration: 0.6 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  className="relative w-full max-w-md mx-auto"
+                  className="flex justify-center"
                 >
                   <img
                     src="/about1.png"
                     alt="About Cesco"
-                    className="w-[80%] h-auto shadow-lg"
+                    className="w-full max-w-[400px] h-auto shadow-lg rounded-lg"
                   />
                 </motion.div>
               </motion.div>
@@ -108,21 +102,19 @@ export default function About() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: false, amount: 0.2 }}
-                className="space-y-8"
+                className="space-y-8 max-w-4xl mx-auto"
               >
                 {/* Vision */}
                 <motion.div
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  className="flex items-start gap-4 pl-12"
+                  className="flex flex-col md:pl-12 md:flex-row items-center md:items-start gap-4 text-center md:text-left"
                 >
-                  <img src="/visi.png" alt="Vision" className="w-32 h-32" />
+                  <img src="/visi.png" alt="Vision" className="w-28 h-28 md:w-32 md:h-32" />
                   <div>
-                    <h3 className="text-green-700 font-bold text-lg">VISION</h3>
-                    <p className="text-gray-700">
+                    <h3 className="text-green-700 font-bold text-lg md:text-xl">VISION</h3>
+                    <p className="text-gray-700 text-base sm:text-lg">
                       To promote high quality services that meet our customers’ requirements
                       and satisfaction, ensuring protection of the environment, as well as
                       health and safety of all our employees, customers and the community.
@@ -134,15 +126,13 @@ export default function About() {
                 <motion.div
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  viewport={{ once: false, amount: 0.3 }}
-                  className="flex items-start gap-4"
+                  className="flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left"
                 >
-                  <img src="/misi.png" alt="Mission" className="w-32 h-32" />
+                  <img src="/misi.png" alt="Mission" className="w-28 h-28 md:w-32 md:h-32" />
                   <div>
-                    <h3 className="text-green-700 font-bold text-lg">MISSION</h3>
-                    <p className="text-gray-700">
+                    <h3 className="text-green-700 font-bold text-lg md:text-xl">MISSION</h3>
+                    <p className="text-gray-700 text-base sm:text-lg">
                       We aim to provide the best professional and world class mechanical
                       completion & pre-commissioning services locally as well as regionally
                       for the Marine, Oil & Gas, Petrochemical and Power Plant Industries.

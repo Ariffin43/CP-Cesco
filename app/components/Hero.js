@@ -5,9 +5,9 @@ import Image from "next/image";
 
 export default function Hero() {
   const slides = [
-    { src: "/hero-sec.png", alt: "Slide 1" },
-    { src: "/8.png", alt: "Slide 2" },
-    { src: "/3.png", alt: "Slide 3" },
+    { src: "/4.jpg", alt: "Slide 1" },
+    { src: "/3.jpg", alt: "Slide 2" },
+    { src: "/2.jpg", alt: "Slide 3" },
   ];
 
   const [current, setCurrent] = useState(0);
@@ -20,7 +20,7 @@ export default function Hero() {
   }, [slides.length]);
 
   return (
-    <section id="home" className="relative w-full h-[100vh] overflow-hidden">
+    <section id="home" className="relative w-full h-screen overflow-hidden">
       {/* Background slideshow */}
       {slides.map((slide, index) => (
         <div
@@ -40,47 +40,36 @@ export default function Hero() {
       ))}
 
       {/* Overlay + Content */}
-      <div className="absolute inset-0 bg-black/40 flex flex-col justify-center px-6 md:px-20 text-white z-10">
-        <motion.h4
-          className="text-lg mb-2 uppercase"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: false, amount: 0.3 }}
-        >
-          Specialized Services To
-        </motion.h4>
-
+      <div className="absolute inset-0 bg-black/40 flex flex-col justify-center 
+      px-4 sm:px-6 md:px-10 lg:px-14 xl:px-20 2xl:px-28 text-white z-10">
         <motion.h1
-          className="text-4xl md:text-5xl font-bold leading-tight"
+          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight max-w-6xl"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 40 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           viewport={{ once: false, amount: 0.3 }}
         >
-          Marine, Petrochemical, <br /> Oil & Gas Industries
+          Your Trusted Partner in<br />Maritime & Energy Solutions
         </motion.h1>
 
         <motion.p
-          className="mt-4 max-w-2xl"
+          className="mt-4 max-w-3xl text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           viewport={{ once: false, amount: 0.3 }}
         >
-          We aim to be the leading mechanical completion & commissioning service
-          provider for the marine & petrochemical industries and engineering &
-          construction services to the construction & general industries.
+          PT. CESCO Offshore and Engineering aims to be the leading provider of mechanical completion and pre-commissioning services
+          in the local and regional maritime, oil, gas, and petrochemical industries.
+          <br />
+          ISO 9000:2015 certification recognizes CESCO's commitment to service excellence and leadership. 
+          The company is also committed to good health, safety, and environmental practices.
         </motion.p>
 
         <motion.button
-          className="mt-6 bg-green-700 px-6 py-3 rounded text-white font-medium hover:bg-green-800 w-fit"
+          className="mt-6 bg-green-700 px-4 sm:px-6 md:px-8 lg:px-10 py-2 sm:py-3 rounded text-white font-medium hover:bg-green-800 w-fit text-sm sm:text-base md:text-lg"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: false, amount: 0.3 }}
         >
@@ -94,7 +83,7 @@ export default function Hero() {
           <button
             key={index}
             onClick={() => setCurrent(index)}
-            className={`w-3 h-3 rounded-full transition ${
+            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition ${
               index === current ? "bg-green-500" : "bg-white/50"
             }`}
           />

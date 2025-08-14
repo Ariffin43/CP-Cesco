@@ -16,6 +16,13 @@ export default function Clients() {
     "/logo10.png",
     "/logo11.png",
     "/logo12.png",
+    "/logo13.png",
+    "/logo14.png",
+    "/logo15.png",
+    "/logo16.png",
+    "/logo17.png",
+    "/logo18.png",
+    "/logo19.png",
   ];
 
   // Variants untuk staggered animation
@@ -23,7 +30,7 @@ export default function Clients() {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.1, // delay antar item
+        staggerChildren: 0.1,
       },
     },
   };
@@ -35,8 +42,8 @@ export default function Clients() {
   };
 
   return (
-    <section id="clients" className="py-16 bg-[#F3F5F7]">
-      <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
+    <section id="clients" className="py-20 w-full bg-[#F3F5F7]">
+      <div className="mx-auto px-10 grid md:grid-cols-2 gap-8 items-center">
 
         {/* Left title */}
         <motion.div
@@ -57,7 +64,7 @@ export default function Clients() {
             viewport={{ once: false, amount: 0.3 }}
             className="mt-2 text-gray-600 uppercase tracking-wide"
           >
-            Lorem ipsum blabla bla
+            Trusted by renowned clients in the maritime, energy, <br /> and petrochemical industries thanks to the quality,<br />safety, and reliability of our services.
           </motion.p>
         </motion.div>
 

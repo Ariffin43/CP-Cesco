@@ -3,21 +3,21 @@ import Hero from "./components/Hero";
 import Clients from "./components/Clients";
 import About from "./components/About";
 import Service from "./components/Service";
-// import Gallery from "./components/Gallery";
-// import Contact from "./components/Contact";
+import Gallery from "./components/Gallery";
+import Contact from "./components/Contact";
 // import Footer from "./components/Footer";
 
 export default function Home() {
   return (
-    <div>
+    <div className="overflow-y-hidden">
       <Navbar />
       <Hero />
       <Clients />
       <About />
       <Service />
-      {/* <Gallery />
+      <Gallery />
       <Contact />
-      <Footer /> */}
+      {/* <Footer /> */}
     </div>
   );
 }

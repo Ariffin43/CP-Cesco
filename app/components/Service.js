@@ -61,7 +61,7 @@ export default function Service() {
   };
 
   return (
-    <section id="services" className="py-20 w-full mx-auto px-4 bg-[#F3F5F7]">
+    <section className="py-20 w-full mx-auto px-4 bg-[#F3F5F7]">
       {/* Title */}
       <motion.h2
         className="text-3xl font-bold mb-6 text-center text-black"

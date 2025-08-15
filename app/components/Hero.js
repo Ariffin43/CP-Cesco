@@ -67,7 +67,7 @@ export default function Hero() {
         </motion.p>
 
         <motion.button
-          className="mt-6 bg-green-700 px-4 sm:px-6 md:px-8 lg:px-10 py-2 sm:py-3 rounded text-white font-medium hover:bg-green-800 w-fit text-sm sm:text-base md:text-lg"
+          className="mt-6 bg-green-700 px-4 sm:px-6 md:px-8 lg:px-10 py-2 sm:py-3 rounded text-white font-medium hover:bg-green-800 w-fit text-sm sm:text-base md:text-lg cursor-pointer"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}

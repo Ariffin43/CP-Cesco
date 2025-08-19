@@ -2,146 +2,125 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
-export default function About() {
+export default function AboutCesco() {
   const [activeTab, setActiveTab] = useState("about");
 
+  const tabs = [
+    { id: "about", label: "About Us" },
+    { id: "vision", label: "Vision & Mission" },
+  ];
+
   return (
-    <section id="about" className="py-20 bg-white w-full flex justify-center">
-      <div className="w-full max-w-screen-2xl mx-auto px-4">
+    <section id="about" className="py-20 bg-gray-50">
+      <div className="w-full px-4 sm:px-6 lg:px-12 grid lg:grid-cols-2 gap-16 items-center">
+        {/* Left Side Content */}
+        <div>
+          <p className="text-green-700 font-medium mb-2">About Cesco</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            Our Offshore & Engineering Journey
+          </h2>
+          <p className="text-lg text-gray-600 leading-relaxed mb-10">
+            PT. CESCO Offshore and Engineering is committed to becoming a leading 
+            provider of mechanical completion and pre-commissioning services across 
+            the maritime, oil, gas, and petrochemical industries. With a focus on 
+            safety, sustainability, and innovation, we deliver solutions that meet 
+            the highest international standards.
+          </p>
 
-        {/* Title */}
-        <motion.h2
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: false, amount: 0.3 }}
-          className="text-3xl md:text-4xl font-bold text-center text-black"
-        >
-          About <span className="text-green-700">Cesco</span>
-        </motion.h2>
-
-        {/* Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          viewport={{ once: false, amount: 0.2 }}
-          className="flex justify-center mt-8 space-x-3"
-        >
-          {["about", "vision"].map((tab) => (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              whileHover={{ scale: 1.05 }}
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 rounded-lg shadow transition cursor-pointer ${
-                activeTab === tab
-                  ? "bg-green-800 text-white"
-                  : "bg-gray-200 text-black hover:bg-gray-300"
-              }`}
-            >
-              {tab === "about" ? "About Us" : "Vision And Mission"}
-            </motion.button>
-          ))}
-        </motion.div>
-
-        {/* Content */}
-        <div className="mt-14 flex justify-center">
-          <AnimatePresence mode="wait">
-            {activeTab === "about" && (
-              <motion.div
-                key="about"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: false, amount: 0.2 }}
-                className="grid md:grid-cols-2 gap-10 items-center w-full max-w-5xl mx-auto"
+          {/* Tabs */}
+          <div className="flex gap-8 border-b border-gray-200 mb-8">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative pb-3 text-lg font-medium transition-colors
+                  ${activeTab === tab.id ? "text-green-700" : "text-gray-500 hover:text-gray-800"}`}
               >
-                {/* Text */}
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="text-gray-700 space-y-5 leading-relaxed text-base sm:text-lg lg:text-xl text-center md:text-left"
-                >
-                  <p>
-                    PT. CESCO Offshore and Engineering aims to be the leading provider of
-                    mechanical completion and pre-commissioning services in the local and
-                    regional maritime, oil, gas, and petrochemical industries.
-                  </p>
-                  <p>
-                    ISO 9000:2015 certification recognizes CESCO’s commitment to service
-                    excellence and leadership. The company is also committed to good health,
-                    safety, and environmental practices.
-                  </p>
-                </motion.div>
-
-                {/* Image */}
-                <motion.div
-                  initial={{ opacity: 0, x: 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="flex justify-center"
-                >
-                  <img
-                    src="/about1.png"
-                    alt="About Cesco"
-                    className="w-full max-w-[400px] h-auto shadow-lg rounded-lg"
+                {tab.label}
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="tab-underline"
+                    className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-green-700"
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />
-                </motion.div>
-              </motion.div>
-            )}
+                )}
+              </button>
+            ))}
+          </div>
 
-            {activeTab === "vision" && (
-              <motion.div
-                key="vision"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: false, amount: 0.2 }}
-                className="space-y-8 max-w-4xl mx-auto"
-              >
-                {/* Vision */}
+          {/* Tab Content */}
+          <div className="min-h-[200px]">
+            <AnimatePresence mode="wait">
+              {activeTab === "about" && (
                 <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="flex flex-col md:pl-12 md:flex-row items-center md:items-start gap-4 text-center md:text-left"
+                  key="about"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  <img src="/visi.png" alt="Vision" className="w-28 h-28 md:w-32 md:h-32" />
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">10+ Years</h3>
+                      <p className="text-gray-600">Experience in Offshore & Engineering</p>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">100+ Projects</h3>
+                      <p className="text-gray-600">Successfully delivered with excellence</p>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">ISO 9001</h3>
+                      <p className="text-gray-600">Certified in Quality Management</p>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">99% Safety</h3>
+                      <p className="text-gray-600">Zero accident commitment</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "vision" && (
+                <motion.div
+                  key="vision"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="space-y-6"
+                >
                   <div>
-                    <h3 className="text-green-700 font-bold text-lg md:text-xl">VISION</h3>
-                    <p className="text-gray-700 text-base sm:text-lg">
-                      To promote high quality services that meet our customers’ requirements
-                      and satisfaction, ensuring protection of the environment, as well as
-                      health and safety of all our employees, customers and the community.
+                    <h3 className="text-xl font-semibold text-green-700 mb-2">Vision</h3>
+                    <p className="text-gray-700 leading-relaxed">
+                      To be a trusted leader in offshore engineering, delivering world-class 
+                      services while prioritizing sustainability and safety.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-green-700 mb-2">Mission</h3>
+                    <p className="text-gray-700 leading-relaxed">
+                      To provide innovative mechanical completion and pre-commissioning 
+                      solutions for maritime, oil & gas, and petrochemical industries, 
+                      ensuring efficiency, safety, and environmental responsibility.
                     </p>
                   </div>
                 </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
 
-                {/* Mission */}
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left"
-                >
-                  <img src="/misi.png" alt="Mission" className="w-28 h-28 md:w-32 md:h-32" />
-                  <div>
-                    <h3 className="text-green-700 font-bold text-lg md:text-xl">MISSION</h3>
-                    <p className="text-gray-700 text-base sm:text-lg">
-                      We aim to provide the best professional and world class mechanical
-                      completion & pre-commissioning services locally as well as regionally
-                      for the Marine, Oil & Gas, Petrochemical and Power Plant Industries.
-                    </p>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Right Side Image */}
+        <div className="flex justify-center">
+          <Image
+            src="/ISO.png"
+            alt="Certificate Cesco"
+            width={500}
+            height={500}
+            className="rounded-2xl shadow-lg object-cover"
+          />
         </div>
       </div>
     </section>

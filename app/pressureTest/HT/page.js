@@ -4,26 +4,26 @@ import Image from "next/image";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
-export default function WFpage() {
+export default function HTpage() {
   const hydros = [
     {
-      img: "/wf/1.png",
-      title: "Circulating Pumps",
+      img: "/ht/1.png",
+      title: "Pressure Testing hydro",
+      specs: ["Pressure : 100 - 30,000 PSI"],
+    },
+    {
+      img: "/ht/2.png",
+      title: "Pressure Chart Recorder",
       specs: [
-        "Follow rate : 5,000 litres/min",
-        "Dimension : L 2100mm x W 1830mm x H 1400mm",
-        "Weight : 2,000kg",
-        "Power Supply : 380 - 415 VAC, 50 / 60 Hz"
+        "Pressure : 300 - 30,000 PSI",
+        "Dimension : L 4400mm x W 220mm x H 580mm",
+        "Weight : 5kg",
       ],
     },
     {
-      img: "/wf/2.png",
-      title: "Floading Pump",
-      specs: [
-        "Follow rate : 2,000 SCF/min",
-        "Dimension : L 5000mm x W 2100mm x H 2000mm",
-        "Weight : 10,000kg",
-      ],
+      img: "/ht/3.png",
+      title: "Deadweight Tester",
+      specs: ["Pressure : 30,000 PSI"],
     },
   ];
 
@@ -50,7 +50,7 @@ export default function WFpage() {
             Service
           </span>
           <h1 className="mt-4 text-5xl font-bold">
-            <span className="text-green-400">Water</span> Flushing
+            <span className="text-green-400">Hydro</span> Test
           </h1>
           <p className="mt-3 max-w-xl mx-auto text-gray-200">
             Precision-engineered hydros to achieve superior cleanliness in piping
@@ -59,17 +59,11 @@ export default function WFpage() {
         </motion.div>
       </div>
 
-      {/* Description */}
-      <section className="max-w-4xl mx-auto px-6 py-14 text-center leading-relaxed">
-        <p>
-          Water flushing is done to remove sediments or other contaminants that are built up in pipes during construction over time. 
-          Flushing can help reduce corrosive conditions associated with bio-film growth that can often lead to leaks and breaks. 
-          Effective water flushing is done with high flow pumps so that scouring action is created. CESCO has a range of pumps to achieve this.
-        </p>
-      </section>
-
-      {/* Hydro */}
+      {/* hydros */}
       <section className="max-w-7xl mx-auto px-6 pb-20">
+        <h2 className="text-3xl font-bold text-center mb-10 text-gray-900">
+          Our Service
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {hydros.map((hydro, i) => (
             <motion.div

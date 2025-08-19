@@ -6,52 +6,45 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-export default function industrial() {
+export default function pressureTest() {
   const services = [
     {
-      title: "Hot Oil Flushing",
-      img: "/hof/1.png",
-      href: "/industrial/HOF",
-      desc: "Ensuring piping system cleanliness with precision oil flushing."
+      title: "Hydro Test",
+      img: "/pt/1.png",
+      href: "/pressureTest/HT",
     },
     {
-      title: "Hydro Jetting",
-      img: "/hj/1.png",
-      href: "/industrial/HJ",
-      desc: "High-pressure water jetting for efficient cleaning solutions."
+      title: "Pneumatic Test",
+      img: "/pt/2.png",
+      href: "/pressureTest/PT",
     },
     {
-      title: "Water Flushing",
-      img: "/wf/1.png",
-      href: "/industrial/WF",
-      desc: "Reliable flushing method to maintain system performance."
+      title: "Test Plug",
+      img: "/pt/3.png",
+      href: "/pressureTest/TP",
     },
     {
-      title: "Chemical Cleaning",
-      img: "/cc/1.png",
-      href: "/industrial/CC",
-      desc: "Powerful chemical cleaning for heavy-duty equipment."
+      title: "Golden Joint Test",
+      img: "/pt/4.png",
+      href: "/pressureTest/GJT",
     },
     {
-      title: "Boiler Cleaning",
-      img: "/services/boiler-cleaning.png",
-      href: "/industrial/BC",
-      desc: "Optimize boiler performance with professional cleaning."
+      title: "Valve FAT",
+      img: "/pt/5.png",
+      href: "/pressureTest/Valve",
     },
     {
-      title: "Dessicant Drying",
-      img: "/dd/2.png",
-      href: "/industrial/DD",
-      desc: "Protect your systems with efficient drying solutions."
+      title: "Subsea FAT",
+      img: "/pt/6.png",
+      href: "/pressureTest/Subsea",
     },
   ];
 
   return (
     <div className="bg-white text-gray-800">
-      {/* Navbar */}
       <Navbar />
 
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="relative h-[80vh] flex items-center justify-center">
         <Image
           src="/hero-sec-industri.png"
@@ -71,7 +64,7 @@ export default function industrial() {
             Service
           </span>
           <h1 className="mt-4 text-4xl md:text-6xl font-bold">
-            <span className="text-green-400">Industrial</span> Cleaning
+            <span className="text-green-400">Pressure</span> Testing
           </h1>
           <p className="mt-3 max-w-2xl mx-auto text-gray-200">
             Advanced solutions to ensure cleanliness, efficiency, and reliability
@@ -80,7 +73,7 @@ export default function industrial() {
         </motion.div>
       </div>
 
-      {/* Services Grid */}
+      {/* Pressure */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
           Our Services
@@ -120,8 +113,7 @@ export default function industrial() {
           ))}
         </div>
       </section>
-
-      {/* Footer */}
+      
       <Footer />
     </div>
   );

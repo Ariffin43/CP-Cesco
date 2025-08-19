@@ -62,9 +62,9 @@ export default function Clients() {
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: false, amount: 0.3 }}
-            className="mt-2 text-gray-600 uppercase tracking-wide"
+            className="mt-2 text-gray-600 text-[20px] tracking-wide"
           >
-            Trusted by renowned clients in the maritime, energy, <br /> and petrochemical industries thanks to the quality,<br />safety, and reliability of our services.
+            Trusted by renowned clients in the maritime, energy, <br /> and petrochemical industries thanks to the quality,<br />safety, and reliability of our services. We continue to <br /> strengthen these partnerships <br /> by providing innovative solutions and consistent project excellence.
           </motion.p>
         </motion.div>
 

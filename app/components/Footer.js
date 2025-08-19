@@ -1,93 +1,97 @@
 "use client";
 import { motion } from "framer-motion";
-import { FaFacebookF, FaInstagram, FaXTwitter } from "react-icons/fa6";
+import { FaFacebookF, FaInstagram, FaXTwitter, FaLinkedinIn, FaPhone, FaLocationDot} from "react-icons/fa6";
+import { FaEnvelope } from "react-icons/fa";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   const fadeUp = {
-    hidden: { opacity: 0, y: 50 },
+    hidden: { opacity: 0, y: 40 },
     visible: { opacity: 1, y: 0 },
   };
 
   return (
-    <footer className="bg-gray-200 text-black">
-      {/* Bagian atas */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: false, amount: 0.2 }}
-        variants={fadeUp}
-        transition={{ duration: 0.6 }}
-        className="flex flex-col md:flex-row justify-end items-center px-4 sm:px-8 py-2 text-xs sm:text-sm text-center md:text-right"
-      >
-        <p className="order-2 md:order-1 mt-2 md:mt-0">
-          Copyright © 2025 PT Cesco Offshore and Engineering
-        </p>
-      </motion.div>
-
-      {/* Bagian bawah */}
-      <div className="border-t border-black flex flex-col md:flex-row justify-between px-4 sm:px-8 py-6 items-center md:items-start gap-6 w-full">
+    <footer className="bg-gray-900 text-gray-300">
+      {/* Bagian utama footer */}
+      <div className="max-w-screen-2xl mx-auto px-6 sm:px-12 py-12 grid grid-cols-1 md:grid-cols-4 gap-10">
         
-        {/* Logo */}
+        {/* Logo dan Deskripsi */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.2 }}
+          variants={fadeUp}
+          transition={{ duration: 0.6 }}
+        >
+          <Image src="/logo.png" alt="CESCO Logo" width={140} height={50} />
+          <p className="mt-4 text-sm leading-relaxed">
+            PT Cesco Offshore and Engineering is a company engaged in 
+            engineering, manufacturing, and modern marine solutions. 
+            We are committed to providing the best services to clients 
+            around the world.
+          </p>
+        </motion.div>
+
+        {/* Tentang */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: false, amount: 0.2 }}
           variants={fadeUp}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="flex-shrink-0 flex justify-center md:justify-start"
         >
-          <Image src="/logo.png" alt="CESCO Logo" width={120} height={40} />
+          <h3 className="text-lg font-semibold mb-4 text-white">About</h3>
+          <ul className="space-y-2 text-sm">
+            <li><Link href="/#about" className="hover:text-green-400 transition">About Company</Link></li>
+            <li><Link href="/career" className="hover:text-green-400 transition">Career</Link></li>
+            <li><Link href="/news" className="hover:text-green-400 transition">News & Article</Link></li>
+            <li><Link href="/csr" className="hover:text-green-400 transition">CSR</Link></li>
+          </ul>
         </motion.div>
 
-        {/* Info Kontak */}
+        {/* Layanan */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: false, amount: 0.2 }}
           variants={fadeUp}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-col text-xs sm:text-sm gap-4 w-full md:w-auto"
         >
-          <div className="flex flex-col sm:flex-row gap-1 sm:gap-4">
-            <p className="font-bold min-w-[60px]">Alamat</p>
-            <p className="max-w-md">
-              Kawasan Intan Industrial Park Blok B No.1. Melcem, Tj. Sengkuang,
-              Kec. Batu Ampar, Kota Batam, Kepulauan Riau, Indonesia
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-1 sm:gap-4">
-            <p className="font-bold min-w-[60px]">Kontak</p>
-            <p>62 811-9442-896</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-1 sm:gap-4">
-            <p className="font-bold min-w-[60px]">Email</p>
-            <div className="flex flex-col">
-              <p>Salesmarketing@cesco.co.id</p>
-              <p>Salesmarketing2@cesco.co.id</p>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold mb-4 text-white">Services</h3>
+          <ul className="space-y-2 text-sm">
+            <li><Link href="/industrial" className="hover:text-green-400 transition">Industrial Cleaning</Link></li>
+            <li><Link href="/pressureTest" className="hover:text-green-400 transition">Pressure Test</Link></li>
+            <li><Link href="/maintance" className="hover:text-green-400 transition">Maintance</Link></li>
+            <li><Link href="/supply&delivery" className="hover:text-green-400 transition">Supply & Delivery</Link></li>
+            <li><Link href="/intregrity-managament" className="hover:text-green-400 transition">Integrity Managament</Link></li>
+          </ul>
         </motion.div>
 
-        {/* Social Media */}
+        {/* Kontak */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: false, amount: 0.2 }}
           variants={fadeUp}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex items-center justify-center md:justify-end gap-4 text-xl sm:text-2xl"
         >
-          <a href="#" className="hover:text-green-800 transition">
-            <FaFacebookF />
-          </a>
-          <a href="#" className="hover:text-green-800 transition">
-            <FaInstagram />
-          </a>
-          <a href="#" className="hover:text-green-800 transition">
-            <FaXTwitter />
-          </a>
+          <h3 className="text-lg font-semibold mb-4 text-white">Contact Us</h3>
+          <p className="text-sm mb-2"><FaLocationDot/> Kawasan Intan Industrial Park Blok B No.1, Batam</p>
+          <p className="text-sm mb-2"><FaPhone /> +62 811-9442-896</p>
+          <p className="text-sm mb-4"><FaEnvelope/> Salesmarketing@cesco.co.id</p>
+          <div className="flex gap-4 text-xl">
+            <a href="#" className="hover:text-green-400 transition"><FaFacebookF /></a>
+            <a href="#" className="hover:text-green-400 transition"><FaInstagram /></a>
+            <a href="#" className="hover:text-green-400 transition"><FaXTwitter /></a>
+            <a href="#" className="hover:text-green-400 transition"><FaLinkedinIn /></a>
+          </div>
         </motion.div>
+      </div>
+
+      {/* Copyright */}
+      <div className="border-t border-gray-700 text-center py-4 text-xs text-gray-400">
+        © 2025 PT Cesco Offshore and Engineering. All Rights Reserved.
       </div>
     </footer>
   );

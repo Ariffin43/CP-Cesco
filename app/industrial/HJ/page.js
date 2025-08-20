@@ -8,19 +8,9 @@ export default function HJPage() {
   const hydros = [
     {
       img: "/hj/1.png",
-      title: "Hydro-Jetting hydro",
+      title: "Hydro-Jetting Pump",
       specs: [
         "Pressure : 15,000 PSI",
-        "Follow rate : 106 litres/min",
-        "Dimension : L 3610mm x W 2210mm x H 1900mm",
-        "Weight : 6,000kg",
-      ],
-    },
-    {
-      img: "/hj/2.png",
-      title: "Hydro-Jetting hydro",
-      specs: [
-        "Pressure : 10,000 - 40,000 PSI",
         "Follow rate : 60 - 130 litres/min",
         "Dimension : L 3800mm x W 2280mm x H 2500mm",
         "Weight : 7,000kg",

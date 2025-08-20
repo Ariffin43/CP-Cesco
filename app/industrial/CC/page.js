@@ -8,21 +8,11 @@ export default function CCpage() {
   const hydros = [
     {
       img: "/cc/1.png",
-      title: "CPE Pump (Stainless Steel)",
+      title: "Centrifugal Pump (Stainless Steel)",
       specs: [
         "Follow rate : 3,800 litres/min",
         "Dimension : L 2580mm x W 2040mm x H 2100mm",
         "Weight : 2,400kg",
-        "Power Supply : 380 - 460 VAC, 50 / 60 Hz"
-      ],
-    },
-    {
-      img: "/cc/2.png",
-      title: "CPF Pumps (Stainless Steel)",
-      specs: [
-        "Follow rate : 5,000 litres/min",
-        "Dimension : L 2000mm x W 1400mm x H 1800mm",
-        "Weight : 2,000kg",
         "Power Supply : 380 - 460 VAC, 50 / 60 Hz"
       ],
     },

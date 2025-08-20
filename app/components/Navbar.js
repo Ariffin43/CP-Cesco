@@ -117,98 +117,111 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex space-x-4 lg:space-x-6 xl:space-x-8 font-medium relative flex-wrap">
-          {menuItems.map((item) =>
-            item.subMenu ? (
-              <div key={item.id} className="relative group">
-                <button
-                  className={`flex items-center gap-1 text-md lg:text-md xl:text-lg transition-all duration-200
-                    ${
-                      isServiceActive
-                        ? "text-green-600 font-semibold after:w-full"
-                        : scrolled
-                        ? "text-green-700 hover:text-green-900"
-                        : "text-white hover:text-gray-200"
-                    } relative after:absolute after:left-0 after:bottom-[-5px] after:h-[2px] after:w-0 after:bg-green-600 after:transition-all group-hover:after:w-full`}
-                >
-                  Service
-                  <svg
-                    className="w-4 h-4 mt-0.5 transition-transform duration-300 group-hover:rotate-180"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {/* Dropdown */}
-                <div className="absolute left-1/2 -translate-x-1/2 mt-3 bg-white shadow-xl rounded-2xl border border-green-100 w-[700px] max-w-[95vw] p-6 opacity-0 scale-95 invisible group-hover:opacity-100 group-hover:scale-100 group-hover:visible transition-all duration-300 z-50">
-                  <div className="grid grid-cols-2 gap-6">
-                    {item.subMenu.map((sub, idx) => (
-                      <Link
-                        key={idx}
-                        href={sub.href}
-                        className={`flex items-start gap-3 p-3 rounded-xl transition
-                          ${
-                            pathname.startsWith(sub.href)
-                              ? "bg-green-100 text-green-800 font-semibold"
-                              : "hover:bg-green-50"
-                          }`}
+        <div className="hidden md:flex items-center gap-6 font-medium relative">
+            {/* Menu Navigasi */}
+            <div className="flex items-center gap-6">
+              {menuItems.map((item) =>
+                item.subMenu ? (
+                  <div key={item.id} className="relative group">
+                    <button
+                      className={`flex items-center gap-1 text-md lg:text-md xl:text-lg transition-all duration-200
+                        ${
+                          isServiceActive
+                            ? "text-green-600 font-semibold after:w-full"
+                            : scrolled
+                            ? "text-green-700 hover:text-green-900"
+                            : "text-white hover:text-gray-200"
+                        } relative after:absolute after:left-0 after:bottom-[-5px] after:h-[2px] after:w-0 after:bg-green-600 after:transition-all group-hover:after:w-full`}
+                    >
+                      Service
+                      <svg
+                        className="w-4 h-4 mt-0.5 transition-transform duration-300 group-hover:rotate-180"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <span>{sub.icon}</span>
-                        <div>
-                          <p
-                            className={`font-semibold ${
-                              pathname.startsWith(sub.href)
-                                ? "text-green-800"
-                                : "text-green-700"
-                            }`}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Dropdown */}
+                    <div className="absolute left-1/2 -translate-x-1/2 mt-3 bg-white shadow-xl rounded-2xl border border-green-100 w-[700px] max-w-[95vw] p-6 opacity-0 scale-95 invisible group-hover:opacity-100 group-hover:scale-100 group-hover:visible transition-all duration-300 z-50">
+                      <div className="grid grid-cols-2 gap-6">
+                        {item.subMenu.map((sub, idx) => (
+                          <Link
+                            key={idx}
+                            href={sub.href}
+                            className={`flex items-start gap-3 p-3 rounded-xl transition
+                              ${
+                                pathname.startsWith(sub.href)
+                                  ? "bg-green-100 text-green-800 font-semibold"
+                                  : "hover:bg-green-50"
+                              }`}
                           >
-                            {sub.title}
-                          </p>
-                          <p className="text-sm text-gray-600">{sub.desc}</p>
-                        </div>
-                      </Link>
-                    ))}
+                            <span>{sub.icon}</span>
+                            <div>
+                              <p
+                                className={`font-semibold ${
+                                  pathname.startsWith(sub.href)
+                                    ? "text-green-800"
+                                    : "text-green-700"
+                                }`}
+                              >
+                                {sub.title}
+                              </p>
+                              <p className="text-sm text-gray-600">{sub.desc}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`text-base lg:text-lg xl:text-xl relative transition after:absolute after:left-0 after:bottom-[-5px] after:h-[2px] after:w-0 after:bg-green-600 after:transition-all hover:after:w-full
-                  ${
-                    pathname === item.href
-                      ? "text-green-600 font-semibold after:w-full"
-                      : scrolled
-                      ? "text-green-700 hover:text-green-900"
-                      : "text-white hover:text-gray-200"
-                  }`}
-              >
-                {item.label}
-              </Link>
-            )
-          )}
+                ) : (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={`text-base lg:text-lg xl:text-xl relative transition after:absolute after:left-0 after:bottom-[-5px] after:h-[2px] after:w-0 after:bg-green-600 after:transition-all hover:after:w-full
+                      ${
+                        pathname === item.href
+                          ? "text-green-600 font-semibold after:w-full"
+                          : scrolled
+                          ? "text-green-700 hover:text-green-900"
+                          : "text-white hover:text-gray-200"
+                      }`}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              )}
+            </div>
+
+            {/* Tombol Login */}
+            <Link
+              href="/Login"
+              className="px-5 py-2 rounded-xl bg-green-600 text-white font-semibold shadow-md hover:bg-green-700 transition-all duration-300"
+            >
+              Login
+            </Link>
         </div>
 
         {/* Mobile Toggle */}
-        <div className="md:hidden">
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 rounded-md transition"
+        <div className="md:hidden flex items-center gap-3">
+          <Link
+            href="/Login"
+            className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition"
           >
+            Login
+          </Link>
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-md transition">
             {mobileOpen ? (
-              <FiX
-                size={28}
-                className={`${scrolled ? "text-green-700" : "text-white"} transition-colors`}
-              />
+              <FiX size={28} className={`${scrolled ? "text-green-700" : "text-white"} transition-colors`} />
             ) : (
-              <FiMenu
-                size={28}
-                className={`${scrolled ? "text-green-700" : "text-white"} transition-colors`}
-              />
+              <FiMenu size={28} className={`${scrolled ? "text-green-700" : "text-white"} transition-colors`} />
             )}
           </button>
         </div>

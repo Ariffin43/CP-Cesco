@@ -78,7 +78,7 @@ export default function Footer() {
         >
           <h3 className="text-lg font-semibold mb-4 text-white">Contact Us</h3>
           <p className="text-sm mb-2"><FaLocationDot/> Kawasan Intan Industrial Park Blok B No.1, Batam</p>
-          <p className="text-sm mb-2"><FaPhone /> +62 811-9442-896</p>
+          <p className="text-sm mb-2"><FaPhone /> +62 778-600-0178</p>
           <p className="text-sm mb-4"><FaEnvelope/> Salesmarketing@cesco.co.id</p>
           <div className="flex gap-4 text-xl">
             <a href="#" className="hover:text-green-400 transition"><FaFacebookF /></a>

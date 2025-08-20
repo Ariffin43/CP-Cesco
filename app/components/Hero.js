@@ -40,7 +40,7 @@ export default function Hero() {
       ))}
 
       {/* Overlay + Content */}
-      <div className="absolute inset-0 bg-black/40 flex flex-col justify-center 
+      <div className="absolute inset-0 bg-black/60 flex flex-col justify-center 
       px-4 sm:px-6 md:px-10 lg:px-14 xl:px-20 2xl:px-28 text-white z-10">
         <motion.h1
           className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight max-w-6xl"

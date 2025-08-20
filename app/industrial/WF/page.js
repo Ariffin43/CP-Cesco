@@ -16,15 +16,6 @@ export default function WFpage() {
         "Power Supply : 380 - 415 VAC, 50 / 60 Hz"
       ],
     },
-    {
-      img: "/wf/2.png",
-      title: "Floading Pump",
-      specs: [
-        "Follow rate : 2,000 SCF/min",
-        "Dimension : L 5000mm x W 2100mm x H 2000mm",
-        "Weight : 10,000kg",
-      ],
-    },
   ];
 
   return (

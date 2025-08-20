@@ -20,12 +20,7 @@ export default function HOFPage() {
       img: "/hof/3.png", 
       title: "HOF-500", 
       specs: [ "Follow rate for single pump : 500 litres/min", "Dimension : L 2130mm x W 1470mm x H 2190mm", "Weight : 2,000kg ~ 2,400kg", "Power Supply : 380~460VAC, 50/60hz", ], 
-    }, 
-    { 
-      img: "/hof/4.png", 
-      title: "HOF-500 Explosion Proof (Zone-Rated)", 
-      specs: [ "Follow rate for single pump : 515 litres/min", "Dimension : L 2130mm x W 1470mm x H 2190mm", "Weight : 2,400kg", "Power Supply : 380~460VAC, 50/60hz", ], 
-    }, 
+    },
     { 
       img: "/hof/5.png", 
       title: "Water-Glycol Pump (WGP)", 

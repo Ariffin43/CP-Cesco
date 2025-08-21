@@ -66,7 +66,7 @@ export default function Navbar() {
           icon: <FaTools className="w-5 h-5 text-yellow-500" />,
           title: "Maintenance",
           desc: "Perawatan rutin & perbaikan",
-          href: "/maintance",
+          href: "/maintenance",
         },
         {
           icon: <FaClock className="w-5 h-5 text-purple-500" />,

@@ -1,196 +1,436 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { FaTable, FaArrowLeft, FaArrowRight, FaBars, FaHome, FaUser, FaSignOutAlt, } from "react-icons/fa";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Poppins } from "next/font/google";
+import { FaBars, FaUser, FaSignOutAlt, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import BarChart from "../../components/BarChart";
+import Sidebar from "../../components/Sidebar";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Swal from "sweetalert2";
 
-export default function Dashboard() {
-    const pathname = usePathname();
-    const data = [
-        { id: 1, name: "PT-001", email: "john@example.com", role: "Admin" },
-        { id: 2, name: "PT-002", email: "jane@example.com", role: "User" },
-        { id: 3, name: "PT-003", email: "michael@example.com", role: "Manager" },
-        { id: 4, name: "PT-004", email: "sarah@example.com", role: "Staff" },
-        { id: 5, name: "PT-005", email: "david@example.com", role: "Admin" },
-        { id: 6, name: "PT-006", email: "john@example.com", role: "Admin" },
-        { id: 7, name: "PT-007", email: "jane@example.com", role: "User" },
-        { id: 8, name: "PT-008", email: "michael@example.com", role: "Manager" },
-        { id: 9, name: "PT-009", email: "sarah@example.com", role: "Staff" },
-        { id: 10, name: "PT-010", email: "david@example.com", role: "Admin" },
-        { id: 11, name: "PT-011", email: "john@example.com", role: "Admin" },
-        { id: 12, name: "PT-012", email: "jane@example.com", role: "User" },
-        { id: 13, name: "PT-013", email: "michael@example.com", role: "Manager" },
-        { id: 14, name: "PT-014", email: "sarah@example.com", role: "Staff" },
-        { id: 15, name: "PT-015", email: "david@example.com", role: "Admin" },
-        { id: 16, name: "PT-016", email: "john@example.com", role: "Admin" },
-        { id: 17, name: "PT-017", email: "jane@example.com", role: "User" },
-        { id: 18, name: "PT-018", email: "michael@example.com", role: "Manager" },
-        { id: 19, name: "PT-019", email: "sarah@example.com", role: "Staff" },
-        { id: 20, name: "PT-020", email: "david@example.com", role: "Admin" },
-        { id: 21, name: "PT-021", email: "david@example.com", role: "Admin" },
-        { id: 22, name: "PT-022", email: "john@example.com", role: "Admin" },
-        { id: 23, name: "PT-023", email: "jane@example.com", role: "User" },
-        { id: 24, name: "PT-024", email: "michael@example.com", role: "Manager" },
-        { id: 25, name: "PT-025", email: "sarah@example.com", role: "Staff" },
-        { id: 26, name: "PT-026", email: "david@example.com", role: "Admin" },
-        { id: 27, name: "PT-027", email: "john@example.com", role: "Admin" },
-        { id: 28, name: "PT-028", email: "jane@example.com", role: "User" },
-        { id: 29, name: "PT-029", email: "michael@example.com", role: "Manager" },
-        { id: 30, name: "PT-030", email: "sarah@example.com", role: "Staff" },
-    ];
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
-    const itemsPerPage = 20;
-    const totalPages = Math.ceil(data.length / itemsPerPage);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const daysBetween = (a, b) => Math.max(0, Math.ceil((startOfDay(b) - startOfDay(a)) / 86400000));
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-        setCurrentPage((prev) => (prev + 1) % totalPages);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [totalPages]);
+const parseFlexibleDate = (v) => {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  const s = String(v).trim().replace(/\//g, "-");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(`${s}T00:00:00`);
+  const m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00`);
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+};
 
-    const startIndex = currentPage * itemsPerPage;
-    const currentData = data.slice(startIndex, startIndex + itemsPerPage);
+const normalizeStatus = (s) => {
+  const t = String(s || "").toLowerCase();
+  if (t.includes("finish") || t.includes("completed")) return "COMPLETED";
+  if (t.includes("ongoing") || t.includes("progress")) return "IN PROGRESS";
+  if (t.includes("cancel")) return "CANCELLED";
+  if (t.includes("pending")) return "NOT STARTED";
+  return "NOT STARTED";
+};
 
-    return (
-        <div className="min-h-screen flex flex-col bg-gray-100">
-            {/* Navbar */}
-            <nav className="w-full bg-green-600 text-white flex items-center justify-between px-4 py-3 shadow-lg sticky top-0 z-50">
-                <button
-                    className="md:hidden p-2"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                >
-                    <FaBars size={22} />
-                </button>
+const statusChip = {
+  COMPLETED: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300",
+  "IN PROGRESS": "bg-amber-100 text-amber-700 ring-1 ring-amber-300",
+  "NOT STARTED": "bg-rose-100 text-rose-700 ring-1 ring-rose-300",
+  CANCELLED: "bg-[#FDE7E7] text-[#7A1F1F] ring-1 ring-[#F1BDBD]",
+};
 
-                <button
-                    className="hidden md:block p-2 cursor-pointer"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                >
-                    <FaBars size={22} />
-                </button>
+const headers = [
+  { k: "statusLabel", label: "Status", align: "left", w: "w-44" },
+  { k: "jobNo", label: "Job Number" },
+  { k: "cust", label: "Customer/ Client" },
+  { k: "projectName", label: "Project Name" },
+  { k: "desc", label: "Scope of Work" },
+  { k: "contractType", label: "Contract Type" },
+  { k: "startDate", label: "Start Date" },
+  { k: "endDate", label: "Finish Date" },
+  { k: "contractDuration", label: "Contract Duration", align: "right" },
+  { k: "actualDuration", label: "Actual Duration", align: "right" },
+  { k: "remainingDuration", label: "Remaining Duration", align: "right" },
+  { k: "addDuration", label: "Add Duration", align: "right" },
+];
 
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">
-                    🌿 Admin Dashboard
-                </h1>
-                <div className="flex items-center gap-4">
-                    <FaUser className="hidden sm:block" />
-                    <FaSignOutAlt className="cursor-pointer" />
-                </div>
-            </nav>
+/* ========== Page ========== */
+export default function ProjectMonitoring() {
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [slide, setSlide] = useState(0);
+  const containerRef = useRef(null);
+  const router = useRouter();
+  const [role, setRole] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-            {/* Layout */}
-            <div className="flex flex-1">
-                {/* Sidebar */}
-                <aside
-                className={`${
-                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } fixed top-12 left-0 h-full w-64 bg-white shadow-lg transition-transform duration-300 z-40`}
-                >
-                    <ul className="space-y-4 p-6 text-gray-700 font-medium">
-                        <li>
-                        <Link
-                            href="/admin/dashboard"
-                            className={`flex items-center gap-2 cursor-pointer px-2 py-2 rounded-md 
-                            ${
-                                pathname === "/admin/dashboard"
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "hover:text-green-600"
-                            }`}
-                        >
-                            <FaHome /> Home
-                        </Link>
-                        </li>
-                        <li>
-                        <Link
-                            href="/admin/project"
-                            className={`flex items-center gap-2 cursor-pointer px-2 py-2 rounded-md 
-                            ${
-                                pathname === "/admin/project"
-                                ? "bg-green-100 text-green-700 font-semibold"
-                                : "hover:text-green-600"
-                            }`}
-                        >
-                            <FaTable /> Projects
-                        </Link>
-                        </li>
-                    </ul>
-                </aside>
+  /* Hitung durasi + overall */
+  const { rows, overall } = useMemo(() => {
+    const today = new Date();
+    const mapped = projects.map((r) => {
+      const s = parseFlexibleDate(r.startDate);
+      const e = parseFlexibleDate(r.endDate);
+      const label = normalizeStatus(r.status);
 
-                {/* Main Content */}
-                <main className="flex-1 p-4 md:p-6 lg:p-10 overflow-x-auto">
-                    <div className="bg-white shadow-lg rounded-xl p-4 md:p-6 lg:p-10 max-w-[3840px] mx-auto">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
-                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 text-black">
-                                <FaTable /> Project Activity
-                            </h1>
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <button
-                                className="p-2 bg-gray-200 rounded-full hover:bg-gray-300"
-                                onClick={() =>
-                                    setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages)
-                                }
-                                >
-                                    <FaArrowLeft />
-                                </button>
-                                <button
-                                className="p-2 bg-gray-200 rounded-full hover:bg-gray-300"
-                                onClick={() => setCurrentPage((prev) => (prev + 1) % totalPages)}
-                                >
-                                    <FaArrowRight />
-                                </button>
-                            </div>
-                        </div>
+      const contractDuration = s && e ? daysBetween(s, e) : 0;
 
-                        {/* Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse border border-gray-200 text-sm sm:text-base lg:text-lg 2xl:text-2xl">
-                                <thead className="bg-green-600 text-white">
-                                <tr>
-                                    <th className="border p-2 sm:p-4">NO</th>
-                                    <th className="border p-2 sm:p-4">Name</th>
-                                    <th className="border p-2 sm:p-4">Email</th>
-                                    <th className="border p-2 sm:p-4">Role</th>
-                                    <th className="border p-2 sm:p-4">Role</th>
-                                    <th className="border p-2 sm:p-4">Role</th>
-                                    <th className="border p-2 sm:p-4">Role</th>
-                                    <th className="border p-2 sm:p-4">Role</th>
-                                </tr>
-                                </thead>
-                                <tbody className="text-black">
-                                {currentData.map((row) => (
-                                    <tr key={row.id} className="hover:bg-gray-100">
-                                    <td className="border p-2 sm:p-4 text-center">{row.id}</td>
-                                    <td className="border p-2 sm:p-4">{row.name}</td>
-                                    <td className="border p-2 sm:p-4">{row.email}</td>
-                                    <td className="border p-2 sm:p-4 text-center">{row.role}</td>
-                                    <td className="border p-2 sm:p-4 text-center">{row.role}</td>
-                                    <td className="border p-2 sm:p-4 text-center">{row.role}</td>
-                                    <td className="border p-2 sm:p-4 text-center">{row.role}</td>
-                                    <td className="border p-2 sm:p-4 text-center">{row.role}</td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
+      let actualDuration = 0, remainingDuration = 0;
+      if (label === "COMPLETED" && s && e) {
+        actualDuration = daysBetween(s, e);
+      } else if (label === "IN PROGRESS" && s) {
+        actualDuration = daysBetween(s, today);
+        remainingDuration = e ? Math.max(0, daysBetween(today, e)) : 0;
+      } else if (label === "NOT STARTED") {
+        remainingDuration = e ? Math.max(0, daysBetween(today, e)) : 0;
+      }
 
-                        {/* Pagination Info */}
-                        <div className="text-center mt-4 text-gray-600 text-sm sm:text-base md:text-lg">
-                            Slide {currentPage + 1} / {totalPages}
-                        </div>
+      return {
+        ...r,
+        statusLabel: label,
+        contractDuration,
+        actualDuration,
+        remainingDuration,
+        addDuration: r.addDuration || 0,
+        startDateFmt: s ? s.toISOString() : null,
+        endDateFmt: e ? e.toISOString() : null,
+      };
+    });
 
-                        {sidebarOpen && (
-                            <div
-                                className="fixed inset-0 backdrop-brightness-30 bg-opacity-50 z-30"
-                                onClick={() => setSidebarOpen(false)}
-                            />
-                        )}
-                    </div>
-                </main>
-            </div>
+    const total = mapped.length;
+    const completed = mapped.filter((m) => m.statusLabel === "COMPLETED").length;
+    const percent = total ? Math.round((completed / total) * 100) : 0;
+
+    return { rows: mapped, overall: { completed, total, percent } };
+  }, [projects]);
+
+  /* Slide setup */
+  const itemsPerTableSlide = 10;
+  const itemsPerChartSlide = 5;
+
+  const tableSlides = Math.max(1, Math.ceil(rows.length / itemsPerTableSlide));
+  const chartSlides = Math.max(1, Math.ceil(rows.length / itemsPerChartSlide));
+  const allSlides = tableSlides + chartSlides;
+  const isChartSlide = slide >= tableSlides;
+
+  // autoplay (+ pause on hover)
+  useEffect(() => {
+    const id = setInterval(() => setSlide((s) => (s + 1) % allSlides), 10000);
+    return () => clearInterval(id);
+  }, [allSlides]);
+
+  useEffect(() => {
+    if (slide > allSlides - 1) setSlide(0);
+  }, [allSlides, slide]);
+
+  // keyboard nav
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowLeft") setSlide((s) => (s - 1 + allSlides) % allSlides);
+      if (e.key === "ArrowRight") setSlide((s) => (s + 1) % allSlides);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [allSlides]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/projects", { cache: "no-store" });
+        if (!res.ok) throw new Error("Gagal fetch");
+        const raw = await res.json();
+
+        // mapping sesuai DB schema kamu
+        const mapped = raw.map((p) => ({
+          id: Number(p.id),
+          jobNo: p.jobNo,
+          cust: p.customer,
+          projectName: p.projectName,
+          desc: p.description,
+          startDate: p.startDate,
+          endDate: p.endDate,
+          status: p.status,
+          PIC: p.pic,
+          contract_type: p.contract_type,
+          addDuration: p.add_duration,
+        }));
+        setProjects(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const pagedRows = useMemo(() => {
+    if (isChartSlide) return [];
+    const start = slide * itemsPerTableSlide;
+    return rows.slice(start, start + itemsPerTableSlide);
+  }, [rows, slide, isChartSlide]);
+
+  const chartPageIndex = Math.max(0, slide - tableSlides);
+  const chartItems = useMemo(() => {
+    if (!isChartSlide) return [];
+    const start = chartPageIndex * itemsPerChartSlide;
+    return rows.slice(start, start + itemsPerChartSlide);
+  }, [rows, isChartSlide, chartPageIndex]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        if (!res.ok) { setRole(null); return; }
+        const data = await res.json();
+        setRole(data?.user?.role ?? null);
+      } catch {
+        setRole(null);
+      }
+    })();
+  }, []);
+
+  const fmtDMY = (iso) => iso ? new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Konfirmasi Logout",
+      text: "Apakah Anda yakin ingin keluar?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Logout",
+      cancelButtonText: "Batal",
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await fetch("/api/auth/logout", { method: "POST" });
+        await Swal.fire({
+          title: "Berhasil",
+          text: "Sebentar Lagi Anda Di kembalikan ke Halaman Login.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        router.replace("/Login");
+      } catch (err) {
+        console.error("Logout failed", err);
+        Swal.fire("Error", "Logout gagal, coba lagi.", "error");
+      }
+    }
+  };
+
+  return (
+    <div className={`min-h-screen flex flex-col bg-white ${poppins.className}`}>
+      {/* NAVBAR */}
+      <nav className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-between px-4 py-3 shadow-lg sticky top-0 z-50">
+        {/* SIDEBAR (komponen) */}
+        <Sidebar
+          open={sidebarOpen}
+          pathname={pathname}
+          onClose={() => setSidebarOpen(false)}
+          role={role}
+        />
+
+        {/* Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* toggles */}
+        <button className="md:hidden p-2" onClick={() => setSidebarOpen((s) => !s)}>
+          <FaBars size={22} />
+        </button>
+        <button className="hidden md:block p-2 cursor-pointer" onClick={() => setSidebarOpen((s) => !s)}>
+          <FaBars size={22} />
+        </button>
+
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide">🌿 Admin Dashboard</h1>
+
+        {/* kanan */}
+        <div className="flex items-center gap-4">
+          <FaUser className="hidden sm:block" />
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Logout"
+            className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
+            aria-label="Logout"
+          >
+            <FaSignOutAlt className="cursor-pointer" />
+          </button>
         </div>
-    );
+      </nav>
+
+      {/* CONTENT */}
+      <main className="flex-1">
+        <div
+          ref={containerRef}
+          className="mx-auto w-full max-w-[2560px] bg-[#F0EDE4] backdrop-blur rounded-2xl border border-emerald-100 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.25)] overflow-hidden"
+        >
+          {/* Top bar with title */}
+          <div className="relative">
+            <div className="flex items-start justify-between gap-4 px-5 md:px-8 lg:px-10 pt-6">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-wide text-gray-800">
+                CESCO PROJECT MONITORING
+              </h2>
+              <Image src="/logo.png" alt="Company Logo" width={300} height={300} priority />
+            </div>
+
+            {/* progress bar (6s) */}
+            <div className="mt-4 h-1 w-full bg-gray-100">
+              <div
+                key={slide} // reset animation each slide
+                className={`h-1 bg-emerald-500 transition-[width] duration-[6000ms] ease-linear`}
+                style={{ willChange: "width" }}
+              />
+            </div>
+          </div>
+
+          {/* Meta & Overall */}
+          <div className="px-5 md:px-8 lg:px-10 pb-6">
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 grid grid-cols-[180px_1fr] gap-3">
+                <div className="text-sm sm:text-base font-semibold text-gray-700 flex items-center">PROJECT MANAGER</div>
+                <div className="bg-gray-50 rounded-md border border-gray-200 px-3 py-2 text-gray-800">Alex B.</div>
+                <div className="text-sm sm:text-base font-semibold text-gray-700 flex items-center">PROJECT GM</div>
+                <div className="bg-gray-50 rounded-md border border-gray-200 px-3 py-2 text-gray-800">Alex B.</div>
+              </div>
+
+              <div className="rounded-lg border border-emerald-200 bg-gradient-to-b from-white to-emerald-50">
+                <div className="grid grid-cols-[1fr_120px]">
+                  <div className="px-3 py-2 text-sm font-semibold text-emerald-800 border-b border-emerald-200">
+                    OVERALL PROGRESS
+                  </div>
+                  <div className="row-span-2 flex items-center justify-center">
+                    <div className="text-3xl font-extrabold text-emerald-700">{overall.percent}%</div>
+                  </div>
+                  <div className="px-3 pb-3 pt-2">
+                    <div className="h-2 bg-emerald-100 rounded">
+                      <div className="h-2 rounded bg-emerald-600" style={{ width: `${overall.percent}%` }} />
+                    </div>
+                    <div className="mt-2 text-xs text-gray-600">
+                      {overall.completed} of {overall.total} completed
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Slide controls */}
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                className="px-3 py-2 rounded-full border text-gray-700 hover:bg-gray-50 active:scale-95 transition"
+                onClick={() => setSlide((s) => (s - 1 + allSlides) % allSlides)}
+                aria-label="Prev slide"
+              >
+                <FaArrowLeft />
+              </button>
+              <span className="text-sm text-gray-600">
+                Slide {slide + 1} / {allSlides}
+              </span>
+              <button
+                className="px-3 py-2 rounded-full border text-gray-700 hover:bg-gray-50 active:scale-95 transition"
+                onClick={() => setSlide((s) => (s + 1) % allSlides)}
+                aria-label="Next slide"
+              >
+                <FaArrowRight />
+              </button>
+            </div>
+
+            {/* Slide area (fade) */}
+            <div key={slide} className="mt-4 rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-opacity duration-700 opacity-100">
+              {!isChartSlide ? (
+                <div className="w-full h-[680px] overflow-x-auto">
+                  <table className="w-full min-w-[1200px] h-170 border-collapse">
+                    <thead className="bg-gray-50">
+                      <tr className="text-[11px] sm:text-xs uppercase tracking-wide text-gray-700">
+                        {headers.map((h) => (
+                          <th
+                            key={h.k}
+                            className={`border border-gray-200 px-2 py-3 ${h.align === "right" ? "text-right" : "text-left"} ${h.w || ""}`}
+                          >
+                            {h.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm text-gray-800 bg-white">
+                      {pagedRows.map((r, idx) => (
+                        <tr
+                          key={r.id}
+                          className={`transition hover:bg-emerald-50/60 ${idx % 2 ? "bg-white" : "bg-gray-50/40"}`}
+                        >
+                          <td className="border border-gray-200 p-0">
+                            <div className={`px-3 py-2 rounded-none ${statusChip[r.statusLabel] || statusChip["NOT STARTED"]} flex items-center gap-2`}>
+                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-current opacity-70"></span>
+                              <span className="font-semibold uppercase tracking-wide text-xs sm:text-sm">{r.statusLabel}</span>
+                            </div>
+                          </td>
+                          <td className="border border-gray-200 px-3 py-2">{r.jobNo}</td>
+                          <td className="border border-gray-200 px-3 py-2">{r.cust}</td>
+                          <td className="border border-gray-200 px-3 py-2">{r.projectName}</td>
+                          <td className="border border-gray-200 px-3 py-2">{r.desc}</td>
+                          <td className="border border-gray-200 px-3 py-2">{r.contract_type || "LUMPSUM"}</td>
+                          <td className="border border-gray-200 px-3 py-2">{fmtDMY(r.startDateFmt)}</td>
+                          <td className="border border-gray-200 px-3 py-2">{fmtDMY(r.endDateFmt)}</td>
+                          <td className="border border-gray-200 px-3 py-2 text-right">{r.contractDuration}</td>
+                          <td className="border border-gray-200 px-3 py-2 text-right">{r.actualDuration}</td>
+                          <td className="border border-gray-200 px-3 py-2 text-right">{r.remainingDuration}</td>
+                          <td className="border border-gray-200 px-3 py-2 text-right">{r.addDuration}</td>
+                        </tr>
+                      ))}
+                      {pagedRows.length === 0 && (
+                        <tr>
+                          <td className="border border-gray-200 px-3 py-10 text-center text-gray-500" colSpan={headers.length}>
+                            No data.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <BarChart items={chartItems} page={chartPageIndex + 1} pages={chartSlides} />
+              )}
+            </div>
+
+            {/* Page info */}
+            <div className="mt-3 text-center text-sm text-gray-600">Slide {slide + 1} / {allSlides}</div>
+
+            {/* Marquee */}
+            <style jsx>{`
+              @keyframes marquee {
+                0% { transform: translateX(100%); }
+                100% { transform: translateX(-100%); }
+              }
+              .animate-marquee {
+                display: inline-block;
+                min-width: 100%;
+                animation: marquee 15s linear infinite;
+              }
+            `}</style>
+
+            <div className="mt-6 w-full overflow-hidden">
+              <div className="animate-marquee whitespace-nowrap text-2xl font-bold text-emerald-700">
+                🚀 Welcome to CESCO Project Monitoring — Keep track of all projects in real-time |
+                Completed: {overall.completed} | Total: {overall.total} | Progress: {overall.percent}% 🚀
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

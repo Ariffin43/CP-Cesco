@@ -2,35 +2,52 @@ import { NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 
 export const runtime = "nodejs";
+const FALLBACK = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHVQL3oU8tZQAAAABJRU5ErkJggg==",
+  "base64"
+);
 
-export async function GET(_, { params }) {
-  const id = Number(params?.id);
-  if (!Number.isFinite(id) || id <= 0) {
+function sniffMime(u8) {
+  if (!u8 || u8.length < 4) return "image/png";
+  if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47) return "image/png";
+  if (u8[0] === 0xff && u8[1] === 0xd8) return "image/jpeg";
+  if (u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46) return "image/gif";
+  return "image/png";
+}
+
+export async function GET(_req, ctx) {
+  const { id } = await ctx.params;
+  const numericId = Number(id);
+  if (!Number.isFinite(numericId) || numericId <= 0) {
     return NextResponse.json({ message: "Invalid ID." }, { status: 400 });
   }
 
   try {
     const row = await prisma.machine_categories.findUnique({
-      where: { id },
-      select: { image: true },
+      where: { id: numericId },
+      select: { image: true, updatedAt: true },
     });
 
+    // fallback kalau kosong
     if (!row || !row.image) {
-      return NextResponse.json({ message: "Not found" }, { status: 404 });
+      return new NextResponse(FALLBACK, {
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=300",
+          "Content-Length": String(FALLBACK.length),
+        },
+      });
     }
 
-    let mime = "image/jpeg";
-    // cek PNG signature
-    const b = row.image;
-    if (b?.[0] === 0x89 && b?.[1] === 0x50 && b?.[2] === 0x4e && b?.[3] === 0x47) {
-      mime = "image/png";
-    }
+    // pastikan Buffer
+    const buf = Buffer.from(row.image);
+    const mime = sniffMime(buf);
 
-    return new NextResponse(row.image, {
-      status: 200,
+    return new NextResponse(buf, {
       headers: {
         "Content-Type": mime,
-        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Cache-Control": "public, max-age=300",
+        "Content-Length": String(buf.length),
       },
     });
   } catch (err) {

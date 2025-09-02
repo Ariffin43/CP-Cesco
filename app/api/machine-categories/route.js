@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const rows = await prisma.machine_categories.findMany({
-      orderBy: { id: "desc" },
+      orderBy: { createdAt: "asc" },
       include: { services: { select: { id: true, name: true } } },
     });
 

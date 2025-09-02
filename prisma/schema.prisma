@@ -79,6 +79,8 @@ model services {
   name               String               @db.VarChar(255)
   createdAt          DateTime?            @default(now()) @db.Timestamp(6)
   updatedAt          DateTime?            @default(now()) @db.Timestamp(6)
+  desc               String               @default("-")
+  icon               String               @default("globe.svg") @db.VarChar(255)
   machine_categories machine_categories[]
 }
 

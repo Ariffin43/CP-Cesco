@@ -99,13 +99,15 @@ export default function Service() {
 
     try {
       if (modalOpen === "service") {
-        // JSON biasa
+        // multipart/form-data
+        const fd = new FormData();
+        if (formData.id != null) fd.append("id", String(formData.id));
+        fd.append("name", formData.name || "");
+        fd.append("desc", formData.desc || "");
+        if (formData.imageFile) fd.append("icon", formData.imageFile); // <--- icon penting
+
         const method = formData.id ? "PUT" : "POST";
-        res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: formData.id, name: formData.name }),
-        });
+        res = await fetch(url, { method, body: fd }); // jangan set Content-Type manual
       } else if (modalOpen === "category") {
         // multipart/form-data
         const fd = new FormData();
@@ -254,6 +256,24 @@ export default function Service() {
             columns={[
               { key: "id", label: "No", isIndex: true, tone: "muted", headClassName: "w-16" },
               { key: "name", label: "Name", tone: "primary" },
+              { key: "desc", label: "Description", tone: "muted", bodyClassName: "max-w-[420px]", truncate: true },
+              {
+                key: "icon",
+                label: "Icon",
+                tone: "muted",
+                render: (row) => (
+                  <div className="w-10 h-10 rounded border border-gray-200 overflow-hidden bg-gray-100">
+                    {row.icon && (
+                      <img
+                        src={row.icon}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    )}
+                  </div>
+                ),
+              },
               { key: "createdAt", label: "Created At", tone: "muted", format: "datetime", headClassName: "min-w-[180px]" },
             ]}
             onAdd={() => { setModalOpen("service"); setFormData({}); }}
@@ -517,11 +537,8 @@ function DataTable({ data, columns = [], onAdd, onEdit, onDelete, startIndex = 0
   );
 }
 
-
 function Modal({ type, formData, setFormData, onClose, onSave, services, categories }) {
-  // handle file -> simpan file + preview URL
   const handleFile = (file) => {
-    // bersihkan preview lama
     if (formData.imagePreview) URL.revokeObjectURL(formData.imagePreview);
 
     if (!file) {
@@ -532,17 +549,14 @@ function Modal({ type, formData, setFormData, onClose, onSave, services, categor
     setFormData({ ...formData, imageFile: file, imagePreview: preview });
   };
 
-  // bersihkan preview saat unmount
   useEffect(() => {
     return () => {
       if (formData?.imagePreview) {
         try { URL.revokeObjectURL(formData.imagePreview); } catch {}
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // helper: preview existing image (saat edit dan belum pilih file baru)
   const existingPreviewUrl =
     formData?.id && (type === "category" || type === "machine")
       ? `/api/${type === "category" ? "machine-categories" : "machines"}/${formData.id}/image?ts=${Date.now()}`
@@ -562,16 +576,47 @@ function Modal({ type, formData, setFormData, onClose, onSave, services, categor
         {/* Body */}
         <div className="px-6 py-5 space-y-4">
           {type === "service" && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Service Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Maintenance"
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 text-gray-500"
-                value={formData.name || ""}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Service Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Maintenance"
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 text-gray-500"
+                  value={formData.name || ""}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  placeholder="Deskripsi singkat service"
+                  className="w-full border rounded-lg px-3 py-2 min-h-[90px] focus:outline-none focus:ring-2 focus:ring-emerald-300 text-gray-500"
+                  value={formData.desc || ""}
+                  onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Icon (optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                  className="w-full border rounded-lg px-3 py-2 text-gray-500 cursor-pointer"
+                />
+                {(formData.imagePreview) && (
+                  <div className="mt-2 w-20 h-20 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                    <img
+                      src={formData.imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {type === "category" && (

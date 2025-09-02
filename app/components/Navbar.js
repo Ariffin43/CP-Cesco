@@ -3,31 +3,17 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  FaRocket,
-  FaClock,
-  FaTools,
-  FaTruck,
-  FaChartLine,
-} from "react-icons/fa";
-import { FiMenu, FiX } from "react-icons/fi";
+import { FaTools } from "react-icons/fa";
+import { FiMenu, FiX, FiChevronDown } from "react-icons/fi";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileServiceOpen, setMobileServiceOpen] = useState(false);
-  const [desktopServiceOpen, setDesktopServiceOpen] = useState(false);
+  const [services, setServices] = useState([]);
+
   const pathname = usePathname();
   const menuRef = useRef(null);
-
-
-  const servicePaths = [
-    "/industrial",
-    "/pressureTest",
-    "/maintance",
-    "/supply-delivery",
-    "/integrity-management",
-  ];
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -48,52 +34,30 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileOpen]);
 
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const res = await fetch("/api/services");
+        if (!res.ok) throw new Error("Failed to fetch services");
+        const data = await res.json();
+        setServices(data);
+      } catch (err) {
+        console.error(err);
+        setServices([]);
+      }
+    }
+    fetchServices();
+  }, []);
+
   const menuItems = [
     { label: "Home", id: "home", href: "/#home" },
     { label: "About Us", id: "about", href: "/#about" },
     { label: "Our Client", id: "clients", href: "/#clients" },
-    {
-      label: "Service",
-      id: "services",
-      subMenu: [
-        {
-          icon: <FaRocket className="w-5 h-5 text-blue-500" />,
-          title: "Industrial Cleaning",
-          desc: "Layanan pembersihan skala industri",
-          href: "/industrial",
-        },
-        {
-          icon: <FaTools className="w-5 h-5 text-yellow-500" />,
-          title: "Maintenance",
-          desc: "Perawatan rutin & perbaikan",
-          href: "/maintenance",
-        },
-        {
-          icon: <FaClock className="w-5 h-5 text-purple-500" />,
-          title: "Pressure Test",
-          desc: "Pengujian tekanan",
-          href: "/pressureTest",
-        },
-        {
-          icon: <FaTruck className="w-5 h-5 text-green-500" />,
-          title: "Supply & Delivery",
-          desc: "Distribusi peralatan/material",
-          href: "/supply-delivery",
-        },
-        {
-          icon: <FaChartLine className="w-5 h-5 text-red-500" />,
-          title: "Integrity Management",
-          desc: "Manajemen integritas aset",
-          href: "/integrity-management",
-        },
-      ],
-    },
+    { label: "Service", id: "services", subMenu: true }, // service dynamic
     { label: "Certificate", id: "certificate", href: "/certificate" },
     { label: "Gallery", id: "gallery", href: "/#gallery" },
     { label: "Contact Us", id: "contact", href: "/#contact" },
   ];
-  
-  const isServiceActive = servicePaths.some(path => pathname.startsWith(path));
 
   return (
     <nav
@@ -119,80 +83,74 @@ export default function Navbar() {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-6 font-medium relative">
             {/* Menu Navigasi */}
-            <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-6 font-medium relative">
               {menuItems.map((item) =>
                 item.subMenu ? (
                   <div key={item.id} className="relative group">
                     <button
-                      className={`flex items-center gap-1 text-md lg:text-md xl:text-lg transition-all duration-200
-                        ${
-                          isServiceActive
-                            ? "text-green-600 font-semibold after:w-full"
-                            : scrolled
-                            ? "text-green-700 hover:text-green-900"
-                            : "text-white hover:text-gray-200"
-                        } relative after:absolute after:left-0 after:bottom-[-5px] after:h-[2px] after:w-0 after:bg-green-600 after:transition-all group-hover:after:w-full`}
-                    >
-                      Service
-                      <svg
-                        className="w-4 h-4 mt-0.5 transition-transform duration-300 group-hover:rotate-180"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* Dropdown */}
-                    <div className="absolute left-1/2 -translate-x-1/2 mt-3 bg-white shadow-xl rounded-2xl border border-green-100 w-[700px] max-w-[95vw] p-6 opacity-0 scale-95 invisible group-hover:opacity-100 group-hover:scale-100 group-hover:visible transition-all duration-300 z-50">
-                      <div className="grid grid-cols-2 gap-6">
-                        {item.subMenu.map((sub, idx) => (
-                          <Link
-                            key={idx}
-                            href={sub.href}
-                            className={`flex items-start gap-3 p-3 rounded-xl transition
-                              ${
-                                pathname.startsWith(sub.href)
-                                  ? "bg-green-100 text-green-800 font-semibold"
-                                  : "hover:bg-green-50"
-                              }`}
-                          >
-                            <span>{sub.icon}</span>
-                            <div>
-                              <p
-                                className={`font-semibold ${
-                                  pathname.startsWith(sub.href)
-                                    ? "text-green-800"
-                                    : "text-green-700"
-                                }`}
-                              >
-                                {sub.title}
-                              </p>
-                              <p className="text-sm text-gray-600">{sub.desc}</p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    className={`text-base lg:text-lg xl:text-xl relative transition after:absolute after:left-0 after:bottom-[-5px] after:h-[2px] after:w-0 after:bg-green-600 after:transition-all hover:after:w-full
-                      ${
-                        pathname === item.href
+                      className={`flex items-center gap-1 text-md lg:text-md xl:text-lg transition-all duration-200 ${
+                        pathname.startsWith("/services")
                           ? "text-green-600 font-semibold after:w-full"
                           : scrolled
                           ? "text-green-700 hover:text-green-900"
                           : "text-white hover:text-gray-200"
                       }`}
+                    >
+                      Service
+                      <FiChevronDown className={`w-4 h-4 mt-0.5 transition-transform duration-300 group-hover:rotate-180`} />
+
+                    </button>
+
+                    <div className="absolute left-1/2 -translate-x-1/2 mt-3 bg-white shadow-xl rounded-2xl border border-green-100 w-[700px] max-w-[95vw] p-6 opacity-0 scale-95 invisible group-hover:opacity-100 group-hover:scale-100 group-hover:visible transition-all duration-300 z-50">
+                      <div className="grid grid-cols-2 gap-6">
+                        {services.length === 0 ? (
+                        <p className="text-gray-500">Loading...</p>
+                        ) : (
+                          services.map((svc) => (
+                            <Link
+                              key={svc.id}
+                              href={`/services/${svc.id}`}
+                              className={`flex items-start gap-3 p-2 rounded-xl transition ${
+                                pathname.startsWith(`/services/${svc.id}`)
+                                  ? "bg-green-100 text-green-800 font-semibold"
+                                  : "hover:bg-green-200"
+                              }`}
+                            >
+                              <span className="w-8 h-8 flex-shrink-0">
+                                {svc.icon ? (
+                                  <Image
+                                    src={svc.icon}
+                                    alt={svc.name}
+                                    width={72}
+                                    height={72}
+                                    className="object-contain"
+                                  />
+                                ) : (
+                                  <FaTools className="w-6 h-6 text-green-600" />
+                                )}
+                              </span>
+                              <div>
+                                <p className="font-semibold text-green-700">{svc.name}</p>
+                                <p className="text-sm text-gray-600">{svc.desc}</p>
+                              </div>
+                            </Link>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // item biasa
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={`text-base lg:text-lg xl:text-xl ${
+                      pathname === item.href
+                        ? "text-green-600 font-semibold"
+                        : scrolled
+                        ? "text-green-700 hover:text-green-900"
+                        : "text-white hover:text-gray-200"
+                    }`}
                   >
                     {item.label}
                   </Link>

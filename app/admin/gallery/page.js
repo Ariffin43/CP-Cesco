@@ -25,10 +25,6 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
-const ALLOWED_MIME = ["image/png", "image/jpeg", "image/jpg"];
-const MAX_IMAGE_MB = 8;
-const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
-
 export default function Gallery() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -52,8 +48,10 @@ export default function Gallery() {
     { title: "", file: null, preview: "", imgOk: true },
   ]);
 
-  const fileInputRefs = useRef([]);
+  // Refs: input file per-blok
+  const fileInputRefs = useRef([]); // <- array of inputs
 
+  /* ========================= Auth ========================= */
   useEffect(() => {
     (async () => {
       try {
@@ -61,10 +59,13 @@ export default function Gallery() {
         if (!res.ok) { setRole(null); return; }
         const data = await res.json();
         setRole(data?.user?.role ?? null);
-      } catch { setRole(null); }
+      } catch {
+        setRole(null);
+      }
     })();
   }, []);
 
+  /* ========================= Fetch items ========================= */
   const fetchItems = async () => {
     try {
       setLoading(true);
@@ -81,7 +82,7 @@ export default function Gallery() {
 
   useEffect(() => { fetchItems(); }, []);
 
-  // derived
+  /* ========================= Derived ========================= */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let arr = items;
@@ -94,13 +95,14 @@ export default function Gallery() {
     return arr;
   }, [items, search, sortAsc]);
 
+  /* ========================= Helpers ========================= */
   const addFormBlock = () => {
     setForms((f) => [...f, { title: "", file: null, preview: "", imgOk: true }]);
   };
 
   const removeFormBlock = (idx) => {
     setForms((f) => {
-      if (f.length === 1) return f;
+      if (f.length === 1) return f; // minimal 1
       const next = [...f];
       const oldPrev = next[idx]?.preview;
       if (oldPrev?.startsWith("blob:")) URL.revokeObjectURL(oldPrev);
@@ -117,15 +119,49 @@ export default function Gallery() {
     });
   };
 
+  const onPickFile = (idx) => fileInputRefs.current[idx]?.click();
+
+  const validateAndSetFile = (idx, file) => {
+    if (!file) return;
+
+    const allowed = ["image/png", "image/jpeg"];
+    const maxBytes = 30 * 1024 * 1024;
+    if (!allowed.includes(file.type)) {
+      Swal.fire("Validation", "Only PNG/JPEG are allowed.", "warning");
+      return;
+    }
+    if (file.size > maxBytes) {
+      Swal.fire("Validation", "Max file size is 5MB.", "warning");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setForms((arr) => {
+      const next = [...arr];
+      const oldPrev = next[idx]?.preview;
+      if (oldPrev?.startsWith("blob:")) URL.revokeObjectURL(oldPrev);
+      next[idx] = { ...next[idx], file, preview: url, imgOk: true };
+      return next;
+    });
+  };
+
+  // drag & drop per-blok (opsional)
+  const handleDrop = (idx, ev) => {
+    ev.preventDefault();
+    const file = ev.dataTransfer.files?.[0];
+    validateAndSetFile(idx, file);
+  };
+  const handleDragOver = (ev) => ev.preventDefault();
+
   const toggleSelect = (id) => {
     const numId = Number(id);
     setSelectedItems((prev) =>
       prev.includes(numId) ? prev.filter((x) => x !== numId) : [...prev, numId]
     );
   };
-
   const isSelected = (id) => selectedItems.includes(Number(id));
 
+  /* ========================= Bulk Delete ========================= */
   const handleBulkDelete = async () => {
     if (selectedItems.length === 0) {
       Swal.fire("Info", "No items selected.", "info");
@@ -139,17 +175,14 @@ export default function Gallery() {
       confirmButtonText: "Yes, delete",
       cancelButtonText: "Cancel",
     });
-
     if (!confirm.isConfirmed) return;
 
     try {
-      // kirim array ID (sesuaikan dengan API-mu)
       const res = await fetch(`/api/gallery`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: selectedItems }),
       });
-
       if (!res.ok) throw new Error("Bulk delete failed");
 
       await fetchItems();
@@ -160,38 +193,7 @@ export default function Gallery() {
     }
   };
 
-  const onPickFile = (idx) => fileInputRefs.current[idx]?.click();
-
-  const onFilesSelected = (idx, file) => {
-    if (!file) return;
-
-    if (!ALLOWED_MIME.includes(file.type)) {
-      Swal.fire("Validation", `Only ${ALLOWED_MIME.join(", ")} are allowed.`, "warning");
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      const mb = (file.size / 1024 / 1024).toFixed(2);
-      Swal.fire("Validation", `Max size ${MAX_IMAGE_MB}MB. Your file: ${mb}MB`, "warning");
-      return;
-    }
-
-    setForms((f) => {
-      const next = [...f];
-      const prevUrl = next[idx]?.preview;
-      if (prevUrl?.startsWith("blob:")) URL.revokeObjectURL(prevUrl);
-      const url = URL.createObjectURL(file);
-      next[idx] = { ...next[idx], file, preview: url, imgOk: true };
-      return next;
-    });
-  };
-
-  const onDropFile = (idx, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const file = e.dataTransfer?.files?.[0];
-    if (file) onFilesSelected(idx, file);
-  };
-
+  /* ========================= Submit ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -199,7 +201,7 @@ export default function Gallery() {
       setUploading(true);
 
       if (editing) {
-        // EDIT MODE: forms[0] only
+        // EDIT MODE: forms[0] saja
         const f = forms[0] || { title: "", file: null };
         if (!f.title.trim()) {
           Swal.fire("Validation", "Title is required.", "warning");
@@ -244,7 +246,6 @@ export default function Gallery() {
         return;
       }
 
-      // upload paralel — tetap ke endpoint lama (tidak perlu ganti API)
       const results = await Promise.allSettled(
         payloads.map(async (p) => {
           const fd = new FormData();
@@ -274,10 +275,10 @@ export default function Gallery() {
     }
   };
 
+  /* ========================= Row actions ========================= */
   const startEdit = (row) => {
     setEditing(row);
-    // gunakan forms array 1 item untuk edit
-    setForms([{ title: row.title, file: null, preview: row.imageUrl || "", imgOk: true }]);
+    setForms([{ title: row.title || "", file: null, preview: row.imageUrl || "", imgOk: true }]);
     setIsModalOpen(true);
   };
 
@@ -333,12 +334,14 @@ export default function Gallery() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditing(null);
+    // revoke semua blob previews
     forms.forEach((f) => {
       if (f.preview?.startsWith("blob:")) URL.revokeObjectURL(f.preview);
     });
     setForms([{ title: "", file: null, preview: "", imgOk: true }]);
   };
 
+  // Lock scroll saat modal buka
   useEffect(() => {
     if (isModalOpen) {
       const prev = document.body.style.overflow;
@@ -427,12 +430,12 @@ export default function Gallery() {
                 </button>
 
                 {selectedItems.length > 0 && (
-                    <button
-                      onClick={handleBulkDelete}
-                      className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl shadow"
-                    >
-                      <FaTrash /> Delete Selected ({selectedItems.length})
-                    </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl shadow"
+                  >
+                    <FaTrash /> Delete Selected ({selectedItems.length})
+                  </button>
                 )}
               </div>
             </div>
@@ -544,7 +547,7 @@ export default function Gallery() {
               </h3>
             </div>
 
-            {/* Form = kolom fleksibel, area tengah yang bisa scroll */}
+            {/* Form */}
             <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
               {/* SCROLL AREA */}
               <div className="px-6 py-4 space-y-6 overflow-y-auto overscroll-contain">
@@ -584,49 +587,37 @@ export default function Gallery() {
                             {editing ? "Replace Image (optional)" : "Upload Image"}
                           </label>
 
-                          {/* Drop/Click area */}
+                          {/* Drop/Click area per-blok */}
                           <div
-                            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                            onDrop={(e) => onDropFile(idx, e)}
-                            onClick={() => onPickFile(idx)} // trigger via ref
+                            onClick={() => onPickFile(idx)}
+                            onDrop={(ev) => handleDrop(idx, ev)}
+                            onDragOver={handleDragOver}
                             className="rounded-2xl border-2 border-dashed border-gray-200 hover:border-emerald-300 transition cursor-pointer p-4 flex flex-col items-center justify-center text-center"
-                            role="button"
-                            tabIndex={0}
                           >
-                            <FaImage className="text-gray-500 mb-2" size={30} />
-                            <p className="text-gray-700 font-medium">Drag & drop your image here</p>
-                            <p className="text-gray-500 text-xs">
-                              or click to choose a file (PNG/JPEG, <span className="font-semibold">max {MAX_IMAGE_MB}MB</span>)
+                            <FaImage className="text-gray-500 mb-2" size={36} />
+                            <p className="text-gray-700 font-medium">
+                              Drag & drop your image here
                             </p>
+                            <p className="text-gray-500 text-sm">
+                              or click to choose a file (PNG/JPEG, max 5MB)
+                            </p>
+                            <input
+                              ref={(el) => { if (el) fileInputRefs.current[idx] = el; }}
+                              type="file"
+                              accept="image/png,image/jpeg"
+                              className="hidden"
+                              onChange={(e) => validateAndSetFile(idx, e.target.files?.[0] || null)}
+                            />
                           </div>
-
-                          {/* Hidden input + ref + id unik + label fallback */}
-                          <input
-                            id={`file-input-${idx}`}
-                            ref={(el) => (fileInputRefs.current[idx] = el)}
-                            type="file"
-                            accept={ALLOWED_MIME.join(",")}
-                            className="hidden"
-                            onChange={(e) => onFilesSelected(idx, e.target.files?.[0])}
-                          />
-                          <label
-                            htmlFor={`file-input-${idx}`}
-                            className="inline-block text-xs text-gray-600 underline cursor-pointer"
-                            onClick={(e) => e.stopPropagation()} // biar nggak trigger parent click
-                          >
-                            Browse from device
-                          </label>
 
                           {!f.imgOk && (
                             <p className="text-xs text-rose-600 mt-1">Invalid file / failed to load.</p>
                           )}
                         </div>
-
                       </div>
 
                       {f.preview && (
                         <div className="mt-3 rounded-xl overflow-hidden border">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={f.preview}
                             alt={`Preview ${idx + 1}`}
@@ -668,7 +659,6 @@ export default function Gallery() {
                 )}
               </div>
 
-              {/* FOOTER (tidak ikut scroll) */}
               <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-2">
                 <button
                   type="button"

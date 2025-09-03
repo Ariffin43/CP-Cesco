@@ -1,6 +1,9 @@
+// app/api/gallery/route.js
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+
 export const runtime = "nodejs";
+const isDev = process.env.NODE_ENV !== "production";
 
 export async function GET() {
   try {
@@ -12,7 +15,7 @@ export async function GET() {
     const mapped = rows.map((g) => ({
       id: Number(g.id),
       title: g.title,
-      imageUrl: `/api/gallery/${g.id}/image?ts=${g.updatedAt ? g.updatedAt.getTime() : Date.now()}`,
+      imageUrl: `/api/gallery/${g.id}/image?ts=${new Date(g.updatedAt ?? Date.now()).getTime()}`,
       createdAt: g.createdAt,
       updatedAt: g.updatedAt,
     }));
@@ -36,20 +39,33 @@ export async function POST(req) {
     if (!title) {
       return NextResponse.json({ message: "Title is required." }, { status: 400 });
     }
-    if (!file || typeof file === "string") {
-      return NextResponse.json({ message: "Image file is required." }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ message: "Image file is required (field name: 'file')." }, { status: 400 });
+    }
+    if (!(file instanceof File)) {
+      return NextResponse.json({ message: "Field 'file' must be a file." }, { status: 400 });
     }
 
-    const mime = file.type || "";
-    if (!["image/png", "image/jpeg"].includes(mime)) {
-      return NextResponse.json({ message: "Only PNG/JPEG allowed." }, { status: 415 });
+    // ✅ Validasi tipe file
+    const allowed = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowed.includes(file.type || "")) {
+      return NextResponse.json({ message: `Only JPG/JPEG/PNG allowed. Got: ${file.type || "unknown"}` }, { status: 415 });
     }
+
+    const MAX_SIZE = 30 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ message: `Max file size is 8MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` }, { status: 413 });
+    }
+
+    // Baca konten setelah lolos cek
     const bytes = await file.arrayBuffer();
-    if (bytes.byteLength > 5 * 1024 * 1024) {
-      return NextResponse.json({ message: "Max file size is 5MB." }, { status: 413 });
+    const buffer = Buffer.from(bytes);
+
+    // (Opsional) double-check jika perlu
+    if (buffer.length > MAX_SIZE) {
+      return NextResponse.json({ message: "Max file size is 8MB (buffer exceeded)." }, { status: 413 });
     }
 
-    const buffer = Buffer.from(bytes);
     const created = await prisma.gallery.create({
       data: { title, image: buffer },
     });
@@ -58,7 +74,7 @@ export async function POST(req) {
       {
         id: Number(created.id),
         title: created.title,
-        imageUrl: `/api/gallery/${created.id}/image?ts=${Date.now()}`,
+        imageUrl: `/api/gallery/${created.id}/image?ts=${new Date(created.updatedAt ?? Date.now()).getTime()}`,
         createdAt: created.createdAt,
         updatedAt: created.updatedAt,
       },
@@ -73,7 +89,7 @@ export async function POST(req) {
 export async function DELETE(req) {
   try {
     const body = await req.json().catch(() => null);
-    const ids = Array.isArray(body?.ids) ? body.ids.map(Number) : [];
+    const ids = Array.isArray(body?.ids) ? body.ids.map(Number).filter(Number.isFinite) : [];
 
     if (!ids.length) {
       return NextResponse.json({ message: "IDs required" }, { status: 400 });
@@ -90,7 +106,7 @@ export async function DELETE(req) {
   } catch (err) {
     console.error("DELETE /api/gallery error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error", detail: String(err) },
+      { error: "Internal Server Error", detail: isDev ? String(err) : undefined },
       { status: 500 }
     );
   }

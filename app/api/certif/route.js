@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+
 export const runtime = "nodejs";
 
 export async function GET() {
@@ -41,10 +42,13 @@ export async function POST(req) {
     if (!allowed.includes(file.type)) {
       return NextResponse.json({ message: "Hanya JPG, JPEG, PNG yang diperbolehkan." }, { status: 400 });
     }
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    if (buffer.length > 5 * 1024 * 1024) {
-      return NextResponse.json({ message: "Ukuran maksimal 5MB." }, { status: 400 });
+
+    const MAX_SIZE = 30 * 1024 * 1024;
+    if (buffer.length > MAX_SIZE) {
+      return NextResponse.json({ message: "Ukuran maksimal 8MB." }, { status: 400 });
     }
 
     const created = await prisma.certif.create({

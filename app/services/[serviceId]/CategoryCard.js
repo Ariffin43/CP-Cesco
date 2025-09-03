@@ -1,4 +1,3 @@
-// app/services/[serviceId]/CategoryCard.js
 "use client";
 
 import { motion } from "framer-motion";

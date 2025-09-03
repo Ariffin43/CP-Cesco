@@ -6,6 +6,7 @@ import { Poppins } from "next/font/google";
 import { usePathname, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Sidebar from "../../components/Sidebar";
+import Link from "next/link";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -104,10 +105,10 @@ export default function Service() {
         if (formData.id != null) fd.append("id", String(formData.id));
         fd.append("name", formData.name || "");
         fd.append("desc", formData.desc || "");
-        if (formData.imageFile) fd.append("icon", formData.imageFile); // <--- icon penting
+        if (formData.imageFile) fd.append("icon", formData.imageFile);
 
         const method = formData.id ? "PUT" : "POST";
-        res = await fetch(url, { method, body: fd }); // jangan set Content-Type manual
+        res = await fetch(url, { method, body: fd });
       } else if (modalOpen === "category") {
         // multipart/form-data
         const fd = new FormData();
@@ -115,9 +116,9 @@ export default function Service() {
         fd.append("service_id", String(formData.service_id || ""));
         fd.append("name", formData.name || "");
         fd.append("desc", formData.desc || "");
-        if (formData.imageFile) fd.append("file", formData.imageFile); // penting: 'file' seperti gallery
+        if (formData.imageFile) fd.append("file", formData.imageFile);
         const method = formData.id ? "PUT" : "POST";
-        res = await fetch(url, { method, body: fd }); // JANGAN set Content-Type manual
+        res = await fetch(url, { method, body: fd });
       } else if (modalOpen === "machine") {
         // multipart/form-data
         const fd = new FormData();
@@ -192,7 +193,17 @@ export default function Service() {
         </button>
         <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide">Admin Dashboard</h1>
         <div className="flex items-center gap-4">
-          <FaUser className="hidden sm:block" />
+          {role === "user" && (
+            <Link
+              href="/admin/profile"
+              className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
+              title="Profile"
+              aria-label="Profile"
+            >
+              <FaUser className="cursor-pointer" />
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={handleLogout}
@@ -389,7 +400,7 @@ function KPI({ label, value, tone = "emerald" }) {
   }[tone];
 
   return (
-    <div className={`rounded-xl border ${toneMap.box} p-3`}>
+    <div className={`rounded-xl border ${toneMap.box} p-5`}>
       <div className={`text-xs ${toneMap.label}`}>{label}</div>
       <div className={`text-2xl font-extrabold ${toneMap.value}`}>{value}</div>
     </div>

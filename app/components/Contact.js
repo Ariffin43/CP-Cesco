@@ -80,7 +80,7 @@ export default function ContactModern() {
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/60 px-3 py-1 text-emerald-700 text-xs sm:text-sm backdrop-blur">
             <FiClock /> Mon–Sat 08:00–17:00 (WIB)
           </span>
-          <h2 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-black text-black whitespace-nowrap">
+          <h2 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-black text-black">
             Let’s <span className="text-green-700">build something</span> great together
           </h2>
           <p className="mt-3 text-gray-600 text-sm sm:text-base">

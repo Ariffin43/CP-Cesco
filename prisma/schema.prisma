@@ -84,6 +84,22 @@ model services {
   machine_categories machine_categories[]
 }
 
+model CompanyProfile {
+  id               Int       @id @default(autoincrement())
+  name             String?   @db.VarChar(255)
+
+  contactPhone     String?   @map("contact_phone")    @db.VarChar(100)
+  contactWhatsapp  String?   @map("contact_whatsapp") @db.VarChar(100)
+  address          String?
+  emails           String[]  @default([])
+  social           Json?
+
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt      @map("updated_at") @db.Timestamptz(6)
+
+  @@map("company_profile")
+}
+
 enum user_role {
   admin
   user

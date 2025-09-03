@@ -193,16 +193,18 @@ export default function Navbar() {
         >
           {menuItems.map((item) =>
             item.subMenu ? (
+              // === SERVICE (dynamic) ===
               <div key={item.id}>
                 <button
+                  type="button"
+                  aria-expanded={mobileServiceOpen}
+                  aria-controls="mobile-services-panel"
                   className="flex justify-between items-center w-full font-semibold text-green-700 py-2"
-                  onClick={() => setMobileServiceOpen(!mobileServiceOpen)}
+                  onClick={() => setMobileServiceOpen((v) => !v)}
                 >
                   {item.label}
                   <svg
-                    className={`w-5 h-5 transition-transform ${
-                      mobileServiceOpen ? "rotate-180" : ""
-                    }`}
+                    className={`w-5 h-5 transition-transform ${mobileServiceOpen ? "rotate-180" : ""}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -212,38 +214,53 @@ export default function Navbar() {
                 </button>
 
                 {mobileServiceOpen && (
-                  <div className="mt-2 space-y-2 pl-3 pr-1">
-                    {item.subMenu.map((sub, idx) => (
-                      <Link
-                        key={idx}
-                        href={sub.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-start gap-3 p-2 rounded-lg transition text-sm
-                          ${
-                            pathname.startsWith(sub.href)
-                              ? "bg-green-100 font-semibold text-green-700"
-                              : "text-gray-800 hover:bg-green-50"
-                          }`}
-                      >
-                        <span>{sub.icon}</span>
-                        <div>
-                          <p className="font-medium">{sub.title}</p>
-                          <p className="text-xs text-gray-600">{sub.desc}</p>
-                        </div>
-                      </Link>
-                    ))}
+                  <div id="mobile-services-panel" className="mt-2 space-y-2 pl-3 pr-1">
+                    {services.length === 0 ? (
+                      <p className="text-gray-500">Loading...</p>
+                    ) : (
+                      services.map((svc) => (
+                        <Link
+                          key={svc.id}
+                          href={`/services/${svc.id}`}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-start gap-3 p-2 rounded-lg transition text-sm
+                            ${
+                              pathname.startsWith(`/services/${svc.id}`)
+                                ? "bg-green-100 font-semibold text-green-700"
+                                : "text-gray-800 hover:bg-green-50"
+                            }`}
+                        >
+                          <span className="w-8 h-8 flex-shrink-0">
+                            {svc.icon ? (
+                              <Image
+                                src={svc.icon}
+                                alt={svc.name}
+                                width={32}
+                                height={32}
+                                className="object-contain w-8 h-8"
+                              />
+                            ) : (
+                              <FaTools className="w-6 h-6 text-green-600" />
+                            )}
+                          </span>
+                          <div>
+                            <p className="font-medium">{svc.name}</p>
+                            <p className="text-xs text-gray-600">{svc.desc}</p>
+                          </div>
+                        </Link>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
             ) : (
+              // === ITEM BIASA ===
               <Link
                 key={item.id}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={`block font-medium py-2 ${
-                  pathname === item.href
-                    ? "text-green-700 font-semibold"
-                    : "text-gray-700"
+                  pathname === item.href ? "text-green-700 font-semibold" : "text-gray-700"
                 }`}
               >
                 {item.label}

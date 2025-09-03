@@ -19,6 +19,7 @@ import { Poppins } from "next/font/google";
 import { usePathname, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Sidebar from "../../components/Sidebar";
+import Link from "next/link";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -369,7 +370,17 @@ export default function Gallery() {
         </button>
         <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide">Admin Dashboard</h1>
         <div className="flex items-center gap-4">
-          <FaUser className="hidden sm:block" />
+          {role === "user" && (
+            <Link
+              href="/admin/profile"
+              className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
+              title="Profile"
+              aria-label="Profile"
+            >
+              <FaUser className="cursor-pointer" />
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={handleLogout}
@@ -503,7 +514,11 @@ export default function Gallery() {
                   <div className="p-4 flex-1 flex flex-col">
                     <h3 className="font-semibold text-gray-900 line-clamp-2">{g.title}</h3>
 
-                    <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="pt-2 text-xs text-gray-500">
+                      {new Date(g.createdAt ?? Date.now()).toLocaleString()}
+                    </div>
+
+                    <div className="mt-2 grid grid-cols-2 gap-2">
                       <button
                         onClick={() => startEdit(g)}
                         className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg"
@@ -517,9 +532,6 @@ export default function Gallery() {
                         <FaTrash /> Delete
                       </button>
                     </div>
-                  </div>
-                  <div className="px-4 pb-4 text-xs text-gray-500">
-                    {new Date(g.createdAt ?? Date.now()).toLocaleString()}
                   </div>
                 </div>
               ))}

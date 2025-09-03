@@ -19,6 +19,7 @@ import { Poppins } from "next/font/google";
 import { usePathname, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Sidebar from "../../components/Sidebar";
+import Link from "next/link";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -318,7 +319,17 @@ export default function Certificates() {
 
         {/* right */}
         <div className="flex items-center gap-4">
-          <FaUser className="hidden sm:block" />
+          {role === "user" && (
+            <Link
+              href="/admin/profile"
+              className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
+              title="Profile"
+              aria-label="Profile"
+            >
+              <FaUser className="cursor-pointer" />
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={handleLogout}

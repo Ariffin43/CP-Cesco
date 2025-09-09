@@ -4,14 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 export default function BarChart({ items = [], page = 1, pages = 1, autoFetch = false }) {
   const wrapRef = useRef(null);
 
-  // ==== Tooltip state ====
   const [tip, setTip] = useState({ show: false, x: 0, y: 0, lines: [] });
 
-  // ==== Data state (untuk autoFetch) ====
   const [remoteItems, setRemoteItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ==== Helpers yang sama dengan page monitoring ====
   const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const daysBetween = (a, b) =>
     Math.max(0, Math.ceil((startOfDay(b) - startOfDay(a)) / 86400000));
@@ -36,7 +33,6 @@ export default function BarChart({ items = [], page = 1, pages = 1, autoFetch = 
     return "NOT STARTED";
   };
 
-  // ==== Auto fetch dari /api/projects (opsional) ====
   useEffect(() => {
     if (!autoFetch) return;
     (async () => {
@@ -46,7 +42,6 @@ export default function BarChart({ items = [], page = 1, pages = 1, autoFetch = 
         if (!res.ok) throw new Error("Failed to load projects");
         const raw = await res.json();
 
-        // Map dari DB → struktur chart + hitung durasi
         const today = new Date();
         const mapped = raw.map((p) => {
           const jobNo = p.jobNo;
@@ -78,14 +73,13 @@ export default function BarChart({ items = [], page = 1, pages = 1, autoFetch = 
             projectName,
             desc,
             statusLabel: label,
-            startDate: p.startDate, // simpan raw (string)
+            startDate: p.startDate,
             endDate: p.endDate,
             startDateFmt: s ? s.toISOString() : null,
             endDateFmt: e ? e.toISOString() : null,
             contractDuration,
             actualDuration,
             remainingDuration,
-            // untuk sekarang kosong:
             contractType: "",
             addDuration: 0,
           };
@@ -101,7 +95,6 @@ export default function BarChart({ items = [], page = 1, pages = 1, autoFetch = 
     })();
   }, [autoFetch]);
 
-  // Pilih sumber items (prop vs autoFetch)
   const data = autoFetch ? remoteItems : items;
 
   const showTip = (e, lines) => {
@@ -113,7 +106,6 @@ export default function BarChart({ items = [], page = 1, pages = 1, autoFetch = 
   };
   const hideTip = () => setTip((t) => ({ ...t, show: false }));
 
-  // ===== Chart math =====
   const W = 1200,
     H = 360;
   const m = { t: 24, r: 20, b: 104, l: 44 };
@@ -151,14 +143,6 @@ export default function BarChart({ items = [], page = 1, pages = 1, autoFetch = 
 
   return (
     <div className="relative bg-white rounded-lg border border-gray-200">
-      {/* Header mini */}
-      <div className="px-4 py-2 border-b text-gray-800 font-semibold flex items-center justify-between">
-        <span>Chart – Contract vs Actual</span>
-        <span className="text-xs text-gray-500">
-          Page {page} / {pages}
-        </span>
-      </div>
-
       {/* Wrapper untuk posisi tooltip absolut */}
       <div ref={wrapRef} className="relative">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-160">

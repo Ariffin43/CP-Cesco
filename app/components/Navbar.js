@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,122 +17,154 @@ export default function Navbar() {
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(e) {
+    function onClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMobileOpen(false);
         setMobileServiceOpen(false);
       }
     }
-    if (mobileOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+    function onKey(e) {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setMobileServiceOpen(false);
+      }
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    if (mobileOpen) {
+      document.body.classList.add("overflow-hidden");
+      document.addEventListener("mousedown", onClickOutside);
+      document.addEventListener("keydown", onKey);
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
-    async function fetchServices() {
+    (async () => {
       try {
-        const res = await fetch("/api/services");
+        const res = await fetch("/api/services", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to fetch services");
         const data = await res.json();
-        setServices(data);
+        setServices(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
         setServices([]);
       }
-    }
-    fetchServices();
+    })();
   }, []);
 
   const menuItems = [
     { label: "Home", id: "home", href: "/#home" },
     { label: "About Us", id: "about", href: "/#about" },
     { label: "Our Client", id: "clients", href: "/#clients" },
-    { label: "Service", id: "services", subMenu: true }, // service dynamic
+    { label: "Service", id: "services", subMenu: true },
     { label: "Certificate", id: "certificate", href: "/certificate" },
     { label: "Gallery", id: "gallery", href: "/#gallery" },
     { label: "Contact Us", id: "contact", href: "/#contact" },
   ];
 
+  const baseText = scrolled ? "text-green-800" : "text-white";
+  const hoverText = scrolled ? "hover:text-green-900" : "hover:text-gray-200";
+
+  const linkUnderline = "relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-green-600 after:transition-all after:duration-300 hover:after:w-full";
+
   return (
     <nav
-      className={`fixed w-full z-50 transition-all duration-300 border-b ${
+      className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${
         scrolled
-          ? "bg-white shadow-md border-green-100"
+          ? "bg-white/95 backdrop-blur border-green-100 shadow-md"
           : "bg-white/10 backdrop-blur-md border-transparent"
       }`}
+      role="navigation"
+      aria-label="Main"
     >
-      <div className="max-w-[3840px] mx-auto px-4 sm:px-2 lg:px-12 2xl:px-24 flex justify-between items-center py-4 md:py-5">
-        {/* Logo */}
-        <Link href="/">
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={160}
-            height={50}
-            priority
-            className="w-[120px] md:w-[160px] transition-transform hover:scale-105"
-          />
-        </Link>
+      {/* Container */}
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+        {/* Row */}
+        <div className="flex items-center justify-between py-4 md:py-5">
+          {/* Logo */}
+          <Link href="/" aria-label="Company Home" className="shrink-0 group">
+            <Image
+              src="/logo.png"
+              alt="Company Logo"
+              width={160}
+              height={50}
+              priority
+              className="w-[120px] md:w-[160px] h-auto transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 120px, 160px"
+            />
+          </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-6 font-medium relative">
-            {/* Menu Navigasi */}
-            <div className="hidden md:flex items-center gap-6 font-medium relative">
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center gap-6">
+            {/* Links */}
+            <div className="hidden md:flex items-center gap-6">
               {menuItems.map((item) =>
                 item.subMenu ? (
                   <div key={item.id} className="relative group">
                     <button
-                      className={`flex items-center gap-1 text-md lg:text-md xl:text-lg transition-all duration-200 ${
-                        pathname.startsWith("/services")
-                          ? "text-green-600 font-semibold after:w-full"
-                          : scrolled
-                          ? "text-green-700 hover:text-green-900"
-                          : "text-white hover:text-gray-200"
-                      }`}
+                      type="button"
+                      className={`flex items-center gap-1 text-base lg:text-lg transition-colors cursor-pointer ${baseText} ${hoverText} ${linkUnderline}`}
+                      aria-haspopup="true"
+                      aria-expanded="false"
                     >
                       Service
-                      <FiChevronDown className={`w-4 h-4 mt-0.5 transition-transform duration-300 group-hover:rotate-180`} />
-
+                      <FiChevronDown className="w-4 h-4 mt-0.5 transition-transform duration-300 group-hover:rotate-180" />
                     </button>
 
-                    <div className="absolute left-1/2 -translate-x-1/2 mt-3 bg-white shadow-xl rounded-2xl border border-green-100 w-[700px] max-w-[95vw] p-6 opacity-0 scale-95 invisible group-hover:opacity-100 group-hover:scale-100 group-hover:visible transition-all duration-300 z-50">
+                    {/* Mega dropdown */}
+                    <div
+                      className="invisible absolute left-1/2 z-50 mt-3 w-[720px] max-w-[95vw] -translate-x-1/2 rounded-2xl border border-green-100 bg-white p-6 opacity-0 shadow-xl transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0"
+                      role="menu"
+                    >
                       <div className="grid grid-cols-2 gap-6">
                         {services.length === 0 ? (
-                        <p className="text-gray-500">Loading...</p>
+                          <p className="text-gray-500">Loading…</p>
                         ) : (
                           services.map((svc) => (
                             <Link
                               key={svc.id}
                               href={`/services/${svc.id}`}
-                              className={`flex items-start gap-3 p-2 rounded-xl transition ${
-                                pathname.startsWith(`/services/${svc.id}`)
-                                  ? "bg-green-100 text-green-800 font-semibold"
-                                  : "hover:bg-green-200"
+                              className={`group/item flex items-start gap-3 rounded-xl p-3 transition-all ${
+                                pathname?.startsWith(`/services/${svc.id}`)
+                                  ? "bg-green-100 text-green-800 ring-1 ring-green-200"
+                                  : "hover:bg-green-50 hover:shadow-md hover:-translate-y-0.5"
                               }`}
+                              role="menuitem"
                             >
-                              <span className="w-8 h-8 flex-shrink-0">
+                              <span className="w-8 h-8 shrink-0 grid place-items-center">
                                 {svc.icon ? (
                                   <Image
                                     src={svc.icon}
                                     alt={svc.name}
-                                    width={72}
-                                    height={72}
-                                    className="object-contain"
+                                    width={32}
+                                    height={32}
+                                    className="h-8 w-8 object-contain transition-transform duration-300 group-hover/item:scale-110"
                                   />
                                 ) : (
-                                  <FaTools className="w-6 h-6 text-green-600" />
+                                  <FaTools className="h-6 w-6 text-green-600 transition-transform duration-300 group-hover/item:scale-110" />
                                 )}
                               </span>
-                              <div>
-                                <p className="font-semibold text-green-700">{svc.name}</p>
-                                <p className="text-sm text-gray-600">{svc.desc}</p>
+                              <div className="min-w-0">
+                                <p className="truncate font-semibold text-green-700">
+                                  {svc.name}
+                                </p>
+                                <p className="line-clamp-2 text-sm text-gray-600">
+                                  {svc.desc}
+                                </p>
                               </div>
                             </Link>
                           ))
@@ -140,16 +173,11 @@ export default function Navbar() {
                     </div>
                   </div>
                 ) : (
-                  // item biasa
                   <Link
                     key={item.id}
                     href={item.href}
-                    className={`text-base lg:text-lg xl:text-xl ${
-                      pathname === item.href
-                        ? "text-green-600 font-semibold"
-                        : scrolled
-                        ? "text-green-700 hover:text-green-900"
-                        : "text-white hover:text-gray-200"
+                    className={`text-base lg:text-lg transition-colors ${baseText} ${hoverText} ${linkUnderline} ${
+                      pathname === item.href ? "font-semibold text-green-600" : ""
                     }`}
                   >
                     {item.label}
@@ -158,115 +186,145 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Tombol Login */}
+            {/* Login */}
             <Link
               href="/Login"
-              className="px-5 py-2 rounded-xl bg-green-600 text-white font-semibold shadow-md hover:bg-green-700 transition-all duration-300"
+              className="rounded-xl bg-green-600 px-5 py-2 text-base lg:text-lg font-semibold text-white shadow-md transition-all duration-300 hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
             >
               Login
             </Link>
-        </div>
+          </div>
 
-        {/* Mobile Toggle */}
-        <div className="md:hidden flex items-center gap-3">
-          <Link
-            href="/Login"
-            className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition"
-          >
-            Login
-          </Link>
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-md transition">
-            {mobileOpen ? (
-              <FiX size={28} className={`${scrolled ? "text-green-700" : "text-white"} transition-colors`} />
-            ) : (
-              <FiMenu size={28} className={`${scrolled ? "text-green-700" : "text-white"} transition-colors`} />
-            )}
-          </button>
+          {/* Mobile Toggle + Login */}
+          <div className="flex items-center gap-3 md:hidden">
+            <Link
+              href="/Login"
+              className="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition-all duration-300 hover:bg-green-700 active:scale-95"
+            >
+              Login
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Toggle menu"
+              className="rounded-md p-2 transition-colors active:scale-95"
+            >
+              {mobileOpen ? (
+                <FiX
+                  size={28}
+                  className={`${scrolled ? "text-green-800" : "text-white"} transition-colors`}
+                />
+              ) : (
+                <FiMenu
+                  size={28}
+                  className={`${scrolled ? "text-green-800" : "text-white"} transition-colors`}
+                />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu Panel */}
       {mobileOpen && (
         <div
           ref={menuRef}
-          className="md:hidden bg-white border-t border-gray-200 p-4 space-y-4 text-left animate-fade-in max-h-[calc(100vh-80px)] overflow-y-auto"
+          className="md:hidden border-t border-gray-200 bg-white/95 backdrop-blur"
         >
-          {menuItems.map((item) =>
-            item.subMenu ? (
-              // === SERVICE (dynamic) ===
-              <div key={item.id}>
-                <button
-                  type="button"
-                  aria-expanded={mobileServiceOpen}
-                  aria-controls="mobile-services-panel"
-                  className="flex justify-between items-center w-full font-semibold text-green-700 py-2"
-                  onClick={() => setMobileServiceOpen((v) => !v)}
-                >
-                  {item.label}
-                  <svg
-                    className={`w-5 h-5 transition-transform ${mobileServiceOpen ? "rotate-180" : ""}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            <div className="max-h-[calc(100vh-80px)] overflow-y-auto space-y-2">
+              {menuItems.map((item) =>
+                item.subMenu ? (
+                  <div key={item.id} className="pt-2">
+                    <button
+                      type="button"
+                      aria-expanded={mobileServiceOpen}
+                      aria-controls="mobile-services-panel"
+                      onClick={() => setMobileServiceOpen((v) => !v)}
+                      className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left font-semibold text-green-700"
+                    >
+                      {item.label}
+                      <svg
+                        className={`h-5 w-5 transition-transform ${
+                          mobileServiceOpen ? "rotate-180" : ""
+                        }`}
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        fill="none"
+                      >
+                        <path
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
 
-                {mobileServiceOpen && (
-                  <div id="mobile-services-panel" className="mt-2 space-y-2 pl-3 pr-1">
-                    {services.length === 0 ? (
-                      <p className="text-gray-500">Loading...</p>
-                    ) : (
-                      services.map((svc) => (
-                        <Link
-                          key={svc.id}
-                          href={`/services/${svc.id}`}
-                          onClick={() => setMobileOpen(false)}
-                          className={`flex items-start gap-3 p-2 rounded-lg transition text-sm
-                            ${
-                              pathname.startsWith(`/services/${svc.id}`)
-                                ? "bg-green-100 font-semibold text-green-700"
-                                : "text-gray-800 hover:bg-green-50"
-                            }`}
-                        >
-                          <span className="w-8 h-8 flex-shrink-0">
-                            {svc.icon ? (
-                              <Image
-                                src={svc.icon}
-                                alt={svc.name}
-                                width={32}
-                                height={32}
-                                className="object-contain w-8 h-8"
-                              />
-                            ) : (
-                              <FaTools className="w-6 h-6 text-green-600" />
-                            )}
-                          </span>
-                          <div>
-                            <p className="font-medium">{svc.name}</p>
-                            <p className="text-xs text-gray-600">{svc.desc}</p>
-                          </div>
-                        </Link>
-                      ))
+                    {mobileServiceOpen && (
+                      <div
+                        id="mobile-services-panel"
+                        className="mt-2 space-y-2 rounded-lg bg-green-50/50 p-2"
+                      >
+                        {services.length === 0 ? (
+                          <p className="px-2 py-1 text-sm text-gray-600">
+                            Loading…
+                          </p>
+                        ) : (
+                          services.map((svc) => (
+                            <Link
+                              key={svc.id}
+                              href={`/services/${svc.id}`}
+                              onClick={() => setMobileOpen(false)}
+                              className={`group/mobile flex items-start gap-3 rounded-lg p-2 text-sm transition-all ${
+                                pathname?.startsWith(`/services/${svc.id}`)
+                                  ? "bg-green-100 font-semibold text-green-700"
+                                  : "text-gray-800 hover:bg-green-100/60 hover:-translate-y-0.5"
+                              }`}
+                            >
+                              <span className="h-8 w-8 shrink-0 grid place-items-center">
+                                {svc.icon ? (
+                                  <Image
+                                    src={svc.icon}
+                                    alt={svc.name}
+                                    width={32}
+                                    height={32}
+                                    className="h-8 w-8 object-contain transition-transform duration-300 group-hover/mobile:scale-110"
+                                  />
+                                ) : (
+                                  <FaTools className="h-6 w-6 text-green-600 transition-transform duration-300 group-hover/mobile:scale-110" />
+                                )}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate">{svc.name}</p>
+                                <p className="line-clamp-2 text-xs text-gray-600">
+                                  {svc.desc}
+                                </p>
+                              </div>
+                            </Link>
+                          ))
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            ) : (
-              // === ITEM BIASA ===
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`block font-medium py-2 ${
-                  pathname === item.href ? "text-green-700 font-semibold" : "text-gray-700"
-                }`}
-              >
-                {item.label}
-              </Link>
-            )
-          )}
+                ) : (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`block rounded-lg px-2 py-2 font-medium transition-all ${
+                      pathname === item.href
+                        ? "text-green-700"
+                        : "text-gray-800 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              )}
+            </div>
+          </div>
         </div>
       )}
     </nav>

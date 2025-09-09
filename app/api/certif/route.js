@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const rows = await prisma.certif.findMany({
-      orderBy: { id: "desc" },
+      orderBy: { id: "asc" },
       select: { id: true, title: true, createdAt: true, updatedAt: true },
     });
 

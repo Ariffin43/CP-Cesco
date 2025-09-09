@@ -96,7 +96,7 @@ export default function Service() {
             transition={{ duration: 0.5, delay: 0.05 }}
             className="mt-3 text-[clamp(1.6rem,3.2vw,2.6rem)] font-black leading-tight text-emerald-950"
           >
-            Reliability, safety, and performance—beautifully integrated
+            Reliability, safety, and performance, fully integrated.
           </motion.h2>
         </div>
 

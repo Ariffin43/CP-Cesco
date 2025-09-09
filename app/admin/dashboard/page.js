@@ -229,7 +229,7 @@ export default function ProjectMonitoring() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col bg-white ${poppins.className}`}>
+    <div className={`min-h-screen flex flex-col bg-[#F0EDE4] ${poppins.className}`}>
       {/* NAVBAR */}
       <nav className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-between px-4 py-3 shadow-lg sticky top-0 z-50">
         {/* SIDEBAR (komponen) */}
@@ -289,21 +289,31 @@ export default function ProjectMonitoring() {
           ref={containerRef}
           className="mx-auto w-full max-w-[2560px] bg-[#F0EDE4] backdrop-blur rounded-2xl border border-emerald-100 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.25)] overflow-hidden"
         >
-          {/* Top bar with title */}
+          {/* Top bar with title (responsive) */}
           <div className="relative">
-            <div className="flex items-start justify-between gap-4 px-5 md:px-8 lg:px-10 pt-6">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-wide text-gray-800">
-                CESCO PROJECT MONITORING
+            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6">
+              <h2 className="text-center sm:text-left text-xl sm:text-3xl lg:text-4xl font-extrabold tracking-wide text-gray-800 leading-tight min-w-0">
+                <span className="block truncate">CESCO PROJECT MONITORING</span>
               </h2>
-              <Image src="/logo.png" alt="Company Logo" width={300} height={300} priority />
+
+              <div className="flex-shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="Company Logo"
+                  width={300}
+                  height={300}
+                  priority
+                  className="w-27 sm:w-28 md:w-36 lg:w-[300px] h-auto"
+                  sizes="(max-width: 640px) 80px, (max-width: 768px) 112px, (max-width: 1024px) 144px, 300px"
+                />
+              </div>
             </div>
 
             {/* progress bar (6s) */}
-            <div className="mt-4 h-1 w-full bg-gray-100">
+            <div className="mt-3 sm:mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
               <div
-                key={slide} // reset animation each slide
-                className={`h-1 bg-emerald-500 transition-[width] duration-[6000ms] ease-linear`}
-                style={{ willChange: "width" }}
+                key={slide}
+                className="h-full bg-emerald-500 animate-progress"
               />
             </div>
           </div>
@@ -315,7 +325,7 @@ export default function ProjectMonitoring() {
                 <div className="text-sm sm:text-base font-semibold text-gray-700 flex items-center">PROJECT MANAGER</div>
                 <div className="bg-gray-50 rounded-md border border-gray-200 px-3 py-2 text-gray-800">Alex B.</div>
                 <div className="text-sm sm:text-base font-semibold text-gray-700 flex items-center">PROJECT GM</div>
-                <div className="bg-gray-50 rounded-md border border-gray-200 px-3 py-2 text-gray-800">Alex B.</div>
+                <div className="bg-gray-50 rounded-md border border-gray-200 px-3 py-2 text-gray-800">Mirza </div>
               </div>
 
               <div className="rounded-lg border border-emerald-200 bg-gradient-to-b from-white to-emerald-50">

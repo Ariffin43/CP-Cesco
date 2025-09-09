@@ -22,7 +22,6 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ message: "Status tidak valid." }, { status: 400 });
     }
 
-    // add_duration (optional)
     let add_duration = null;
     if (body.add_duration !== undefined && body.add_duration !== null && body.add_duration !== "") {
       const n = Number(body.add_duration);
@@ -38,9 +37,9 @@ export async function PUT(req, { params }) {
       if (v === "LUMPSUM" || v === "DAILY_RATE") {
         contract_type = v;
       } else if (v === "") {
-        contract_type = null; // kosong -> null
+        contract_type = null;
       } else if (v === "DAILY RATE") {
-        contract_type = "DAILY_RATE"; // perbaiki import yang pakai spasi
+        contract_type = "DAILY_RATE";
       } else {
         return NextResponse.json({ message: "contract_type tidak valid" }, { status: 400 });
       }
@@ -82,7 +81,6 @@ export async function PUT(req, { params }) {
   }
 }
 
-// DELETE /api/projects/:id
 export async function DELETE(req, { params }) {
   try {
     const id = BigInt(params.id);

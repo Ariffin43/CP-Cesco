@@ -12,6 +12,22 @@ import Sidebar from "../../components/Sidebar";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { saveAs } from "file-saver";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  Table as DocxTable,
+  TableRow,
+  TableCell,
+  WidthType,
+  AlignmentType,
+  HeadingLevel,
+  BorderStyle,
+  TextRun,
+} from "docx";
 
 /* ========================= Helpers ========================= */
 const startOfDay = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -364,8 +380,82 @@ export default function Projects() {
 
   /* ---------- Export ---------- */
   const exportPDF = () => {
-    window.print();
-    Swal.fire({ icon: "success", title: "Mengekspor ke PDF...", timer: 1000, showConfirmButton: false });
+    try {
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "A4" });
+
+      const title = "SUMMARY OF PROJECT DOCUMENT";
+      doc.setFontSize(14);
+      doc.text(title, 40, 40);
+
+      const head = [[
+        "N", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
+        "PROJECT NAME", "DESCRIPTION OF JOB", "START DATE", "FINISH DATE", "STATUS",
+      ]];
+
+      const body = filtered.map((p, i) => ([
+        i + 1,
+        "",
+        p.jobNo,
+        p.cust,
+        p.projectName,
+        p.desc,
+        fmtHuman(p.startDate),
+        fmtHuman(p.endDate),
+        String(p.status || ""),
+      ]));
+
+      // --- hitung lebar kolom proporsional agar TIDAK melewati page width ---
+      const pageWidth  = doc.internal.pageSize.getWidth();     // ~842pt (A4 landscape)
+      const margin     = { left: 40, right: 40 };
+      const contentW   = pageWidth - margin.left - margin.right;
+
+      // Persentase per kolom (jumlahkan ~100). Sesuaikan bila perlu.
+      const perc = [4, 8, 10, 18, 16, 28, 6, 6, 4]; // total 100
+      const colW = perc.map(p => (p / 100) * contentW);
+
+      autoTable(doc, {
+        head,
+        body,
+        startY: 60,
+        tableWidth: contentW,           // kunci: fit ke lebar konten
+        margin,                         // kunci: batas kiri/kanan konsisten
+        styles: {
+          fontSize: 8,
+          cellPadding: 4,
+          valign: "middle",
+          overflow: "linebreak",        // bungkus teks panjang, jangan melebar
+          cellWidth: "wrap",
+        },
+        headStyles: {
+          fillColor: [5, 150, 105],
+          textColor: 255,
+          fontStyle: "bold",
+          halign: "center",
+        },
+        columnStyles: {
+          0: { cellWidth: colW[0],  halign: "center" }, // N
+          1: { cellWidth: colW[1] },                    // DATE NO
+          2: { cellWidth: colW[2] },                    // JOB NO
+          3: { cellWidth: colW[3] },                    // CUSTOMER / CLIENT
+          4: { cellWidth: colW[4] },                    // PROJECT NAME
+          5: { cellWidth: colW[5] },                    // DESCRIPTION OF JOB
+          6: { cellWidth: colW[6] },                    // START DATE
+          7: { cellWidth: colW[7] },                    // FINISH DATE
+          8: { cellWidth: colW[8], halign: "center" },  // STATUS
+        },
+        didDrawPage: (data) => {
+          const pageH = doc.internal.pageSize.getHeight();
+          doc.setFontSize(9);
+          doc.text(`Total: ${filtered.length}`, margin.left, pageH - 10);
+        },
+      });
+
+      doc.save("SUMMARY_OF_PROJECT_DOCUMENT.pdf");
+      Swal.fire({ icon: "success", title: "PDF diekspor", timer: 1200, showConfirmButton: false });
+    } catch (e) {
+      console.error("exportPDF error:", e);
+      Swal.fire({ icon: "error", title: "Gagal ekspor PDF", text: String(e) });
+    }
   };
 
   const exportExcel = () => {
@@ -375,7 +465,8 @@ export default function Projects() {
       "PROJECT NAME", "DESCRIPTION OF JOB", "START DATE", "FINISH DATE", "STATUS"
     ];
 
-    const rows = projects.map((p, i) => ([
+    // pakai 'filtered' agar konsisten dengan PDF/Word
+    const rows = filtered.map((p, i) => ([
       i + 1, "", p.jobNo, p.cust, p.projectName, p.desc,
       fmtHuman(p.startDate), fmtHuman(p.endDate), String(p.status || "").toUpperCase()
     ]));
@@ -397,17 +488,77 @@ export default function Projects() {
     Swal.fire({ icon: "success", title: "Excel diekspor", timer: 1200, showConfirmButton: false });
   };
 
-  const exportWord = () => {
-    const lines = projects.map((p, i) =>
-      `${i + 1}. ${p.jobNo} | ${p.cust} | ${p.projectName} | ${p.desc} | ${toISOInput(p.startDate)} → ${toISOInput(p.endDate)} | ${p.status} | ${p.PIC}`
-    );
-    const blob = new Blob([lines.join("\n")], { type: "application/msword" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "projects.doc";
-    link.click();
-    Swal.fire({ icon: "success", title: "Word diekspor", timer: 1200, showConfirmButton: false });
+  const exportWord = async () => {
+    try {
+      const title = new Paragraph({
+        text: "SUMMARY OF PROJECT DOCUMENT",
+        heading: HeadingLevel.HEADING_2,
+        alignment: AlignmentType.CENTER,
+      });
+
+      // Header cells
+      const headerTitles = [
+        "N", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
+        "PROJECT NAME", "DESCRIPTION OF JOB", "START DATE", "FINISH DATE", "STATUS"
+      ];
+
+      const headerRow = new TableRow({
+        children: headerTitles.map((t) =>
+          new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: t, bold: true })] })],
+            shading: { fill: "E2F5EA" }, // hijau muda
+            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+          })
+        ),
+      });
+
+      const dataRows = filtered.map((p, i) =>
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph(String(i + 1))] }),
+            new TableCell({ children: [new Paragraph("")] }),
+            new TableCell({ children: [new Paragraph(p.jobNo || "")] }),
+            new TableCell({ children: [new Paragraph(p.cust || "")] }),
+            new TableCell({ children: [new Paragraph(p.projectName || "")] }),
+            new TableCell({ children: [new Paragraph(p.desc || "")] }),
+            new TableCell({ children: [new Paragraph(fmtHuman(p.startDate) || "")] }),
+            new TableCell({ children: [new Paragraph(fmtHuman(p.endDate) || "")] }),
+            new TableCell({ children: [new Paragraph(String(p.status || ""))] }),
+          ],
+        })
+      );
+
+      const table = new DocxTable({
+        width: { size: 100, type: WidthType.PERCENT },
+        rows: [headerRow, ...dataRows],
+        borders: {
+          top:    { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          left:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          right:  { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          insideH:{ style: BorderStyle.SINGLE, size: 1, color: "DDDDDD" },
+          insideV:{ style: BorderStyle.SINGLE, size: 1, color: "DDDDDD" },
+        },
+      });
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [title, new Paragraph(" "), table],
+          },
+        ],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, "SUMMARY_OF_PROJECT_DOCUMENT.docx");
+      Swal.fire({ icon: "success", title: "Word diekspor", timer: 1200, showConfirmButton: false });
+    } catch (e) {
+      console.error("exportWord error:", e);
+      Swal.fire({ icon: "error", title: "Gagal ekspor Word", text: String(e) });
+    }
   };
+
 
   /* ---------- Import ---------- */
   const handleFileUpload = (e) => {

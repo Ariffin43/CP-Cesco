@@ -29,10 +29,38 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const body = await req.json();
+    const bodyRaw = await req.json();
 
-    const start = parseDateOnly(body.startDate);
-    const end = parseDateOnly(body.endDate);
+    const normStr = (v) => String(v ?? "").trim();
+
+    const jobNo       = normStr(bodyRaw.jobNo);
+    const customer    = normStr(bodyRaw.customer);
+    const projectName = normStr(bodyRaw.projectName);
+    const description = normStr(bodyRaw.description);
+    const picRaw      = normStr(bodyRaw.pic);
+
+    if (!jobNo || !customer || !projectName || !description) {
+      return NextResponse.json(
+        { message: "Field wajib: jobNo, customer, projectName, description." },
+        { status: 400 }
+      );
+    }
+
+    if (jobNo.length > 64) {
+      return NextResponse.json({ message: "jobNo maksimal 64 karakter." }, { status: 400 });
+    }
+    if (customer.length > 256) {
+      return NextResponse.json({ message: "customer maksimal 256 karakter." }, { status: 400 });
+    }
+    if (projectName.length > 256) {
+      return NextResponse.json({ message: "projectName maksimal 256 karakter." }, { status: 400 });
+    }
+    if (picRaw && picRaw.length > 128) {
+      return NextResponse.json({ message: "pic maksimal 128 karakter." }, { status: 400 });
+    }
+
+    const start = parseDateOnly(bodyRaw.startDate);
+    const end   = parseDateOnly(bodyRaw.endDate);
     if (!start || !end || end < start) {
       return NextResponse.json(
         { message: "Tanggal tidak valid. Gunakan YYYY-MM-DD; End >= Start." },
@@ -40,50 +68,65 @@ export async function POST(req) {
       );
     }
 
-    const status = normalizeStatus(body.status);
+    const status = normalizeStatus(bodyRaw.status);
     const allowed = new Set(["Pending", "Ongoing", "Finish", "Cancel"]);
     if (!allowed.has(status)) {
       return NextResponse.json({ message: "Status tidak valid." }, { status: 400 });
     }
 
-    // add_duration (optional)
     let add_duration_normalized;
-    if (body.add_duration !== undefined) {
-      if (body.add_duration === null || body.add_duration === "") {
+    if (bodyRaw.add_duration !== undefined) {
+      if (bodyRaw.add_duration === null || bodyRaw.add_duration === "") {
         add_duration_normalized = null;
       } else {
-        const n = Number(body.add_duration);
+        const n = Number(bodyRaw.add_duration);
         if (!Number.isFinite(n) || n < 0) {
-          return NextResponse.json({ message: "add_duration harus angka ≥ 0 atau kosong." }, { status: 400 });
+          return NextResponse.json(
+            { message: "add_duration harus angka ≥ 0 atau kosong." },
+            { status: 400 }
+          );
         }
         add_duration_normalized = n;
       }
     }
 
-    // contract_type (optional)
     let contract_type_normalized;
-    if (body.contract_type !== undefined) {
-      const v = String(body.contract_type).trim();
-      if (v === "") {
+    if (bodyRaw.contract_type !== undefined) {
+      const v = normStr(bodyRaw.contract_type);
+      if (!v) {
         contract_type_normalized = null;
       } else if (v === "LUMPSUM" || v === "DAILY_RATE") {
         contract_type_normalized = v;
       } else if (v === "DAILY RATE") {
         contract_type_normalized = "DAILY_RATE";
       } else {
-        return NextResponse.json({ message: "contract_type tidak valid" }, { status: 400 });
+        return NextResponse.json({ message: "contract_type tidak valid." }, { status: 400 });
       }
     }
 
+    const duplicate = await prisma.project.findFirst({
+      where: {
+        jobNo,
+        projectName,
+      },
+      select: { id: true },
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        { message: "Data duplikat: kombinasi jobNo & projectName sudah ada." },
+        { status: 409 }
+      );
+    }
+
     const data = {
-      jobNo: String(body.jobNo ?? "").trim(),
-      customer: String(body.customer ?? "").trim(),
-      projectName: String(body.projectName ?? "").trim(),
-      description: String(body.description ?? "").trim(),
+      jobNo,
+      customer,
+      projectName,
+      description,
       startDate: start,
       endDate: end,
       status,
-      pic: (body.pic && String(body.pic).trim()) || "-",
+      pic: picRaw || "-",
       ...(contract_type_normalized !== undefined && { contract_type: contract_type_normalized }),
       ...(add_duration_normalized !== undefined && { add_duration: add_duration_normalized }),
     };
@@ -103,11 +146,30 @@ export async function POST(req) {
         pic: created.pic ?? "-",
         contract_type: created.contract_type ?? null,
         add_duration: created.add_duration ?? 0,
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
       },
       { status: 201 }
     );
   } catch (e) {
+    const msg = (e && e.code)
+      ? `Prisma error ${e.code}: ${e.meta?.target ?? ""}`.trim()
+      : String(e);
+
+    if (e?.code === "P2002") {
+      return NextResponse.json(
+        { message: "Duplikat data melanggar constraint unik.", error: msg },
+        { status: 409 }
+      );
+    }
+    if (e?.code === "P2000") {
+      return NextResponse.json(
+        { message: "Nilai terlalu panjang untuk kolom tertentu.", error: msg },
+        { status: 400 }
+      );
+    }
+
     console.error("POST /api/projects error:", e);
-    return NextResponse.json({ message: "Gagal membuat project", error: String(e) }, { status: 500 });
+    return NextResponse.json({ message: "Gagal membuat project", error: msg }, { status: 500 });
   }
 }

@@ -148,6 +148,25 @@ export default function LoginClean() {
 
         {/* Right — Form */}
         <div className="p-6 sm:p-10 bg-white">
+          {/* Back Button */}
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:text-emerald-900 cursor-pointer"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+            Back
+          </button>
+
           <div className="mb-6">
             <h1 className="text-2xl font-extrabold text-emerald-700">Sign in</h1>
             <p className="text-sm text-slate-600">Use your admin credentials to continue.</p>

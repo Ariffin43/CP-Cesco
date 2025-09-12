@@ -16,6 +16,39 @@ function normalizeURL(v) {
   return v.startsWith("http://") || v.startsWith("https://") ? v : `https://${v}`;
 }
 
+function extractSocialHandle(rawUrl = "", platform = "") {
+  try {
+    const u = new URL(normalizeURL(rawUrl));
+    const segs = u.pathname.split("/").filter(Boolean); // ['in','john-doe'] dll
+    if (!segs.length) return null;
+
+    // aturan per platform
+    switch (platform) {
+      case "instagram":
+      case "x": // twitter/x
+        return decodeURIComponent(segs[0] || "");
+      case "linkedin":
+        // /in/username, /company/slug, /school/slug, /showcase/slug
+        if (["in", "company", "school", "showcase"].includes(segs[0])) {
+          return decodeURIComponent(segs[1] || "");
+        }
+        return decodeURIComponent(segs[0] || "");
+      case "facebook":
+        // /username atau /profile.php?id=123
+        if (segs[0] === "profile.php") {
+          const id = u.searchParams.get("id");
+          return id ? `id:${id}` : null;
+        }
+        return decodeURIComponent(segs[0] || "");
+      default:
+        return decodeURIComponent(segs[0] || "");
+    }
+  } catch {
+    return null;
+  }
+}
+
+
 function slugify(str = "") {
   return String(str)
     .toLowerCase()
@@ -227,55 +260,36 @@ export default function Footer() {
           ))}
 
           {/* Socials */}
-          <div className="flex gap-4 text-xl mt-4">
-            {socials.facebook && (
-              <a
-                href={socials.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-green-400 transition"
-                aria-label="Facebook"
-                title="Facebook"
-              >
-                <FaFacebookF />
-              </a>
-            )}
-            {socials.instagram && (
-              <a
-                href={socials.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-green-400 transition"
-                aria-label="Instagram"
-                title="Instagram"
-              >
-                <FaInstagram />
-              </a>
-            )}
-            {socials.x && (
-              <a
-                href={socials.x}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-green-400 transition"
-                aria-label="X"
-                title="X"
-              >
-                <FaXTwitter />
-              </a>
-            )}
-            {socials.linkedin && (
-              <a
-                href={socials.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-green-400 transition"
-                aria-label="LinkedIn"
-                title="LinkedIn"
-              >
-                <FaLinkedinIn />
-              </a>
-            )}
+          <div className="flex flex-wrap gap-4 text-xl mt-4">
+            {[
+              { key: "facebook", Icon: FaFacebookF, labelPrefix: "" },
+              { key: "instagram", Icon: FaInstagram, labelPrefix: "@" },
+              { key: "x",        Icon: FaXTwitter, labelPrefix: "@" },
+              { key: "linkedin", Icon: FaLinkedinIn, labelPrefix: "" },
+            ].map(({ key, Icon, labelPrefix }) => {
+              const href = socials[key];
+              if (!href) return null;
+              const handle = extractSocialHandle(href, key);
+
+              return (
+                <a
+                  key={key}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-green-400 transition text-base"
+                  aria-label={key.charAt(0).toUpperCase() + key.slice(1)}
+                  title={key.charAt(0).toUpperCase() + key.slice(1)}
+                >
+                  <Icon className="text-xl" />
+                  {handle && (
+                    <span className="text-sm truncate max-w-[160px]">
+                      {labelPrefix}{handle}
+                    </span>
+                  )}
+                </a>
+              );
+            })}
           </div>
         </motion.div>
       </div>

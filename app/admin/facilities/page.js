@@ -2,18 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  FaBars,
-  FaUser,
-  FaSignOutAlt,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaSearch,
-  FaSortAmountDown,
-  FaSortAmountUp,
-  FaCertificate,
-  FaImage,
-  FaRegFileAlt,
+  FaBars, FaUser, FaSignOutAlt, FaPlus, FaEdit, FaTrash,
+  FaSearch, FaSortAmountDown, FaSortAmountUp, FaBuilding,
+  FaImage, FaRegFileAlt,
 } from "react-icons/fa";
 import { Poppins } from "next/font/google";
 import { usePathname, useRouter } from "next/navigation";
@@ -21,12 +12,10 @@ import Swal from "sweetalert2";
 import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
+const poppins = Poppins({ subsets: ["latin"], weight: ["400","500","600","700"] });
+const API_BASE = "/api/facilities";
 
-export default function Certificates() {
+export default function FacilitiesAdmin() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -36,15 +25,15 @@ export default function Certificates() {
   const [preview, setPreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState("");
-  const [sortAsc, setSortAsc] = useState(false);
+  const [sortAsc, setSortAsc] = useState(true); // default A→Z
   const [dense, setDense] = useState(false);
 
   // CRUD states
-  const [certifs, setCertifs] = useState([]);
+  const [facils, setFacils] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ title: "", image: "" });
+  const [form, setForm] = useState({ title: "", desc: "", image: "" });
   const [imgOk, setImgOk] = useState(true);
 
   // drag & drop
@@ -57,10 +46,7 @@ export default function Certificates() {
     (async () => {
       try {
         const res = await fetch("/api/auth/me", { cache: "no-store" });
-        if (!res.ok) {
-          setRole(null);
-          return;
-        }
+        if (!res.ok) { setRole(null); return; }
         const data = await res.json();
         setRole(data?.user?.role ?? null);
       } catch {
@@ -69,13 +55,13 @@ export default function Certificates() {
     })();
   }, []);
 
-  const fetchCertifs = async () => {
+  const fetchFacils = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/certif", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch data");
+      const res = await fetch(API_BASE, { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to fetch facilities");
       const data = await res.json();
-      setCertifs(Array.isArray(data) ? data : []);
+      setFacils(Array.isArray(data) ? data : []);
     } catch (err) {
       Swal.fire("Error", err.message || "Failed to fetch data", "error");
     } finally {
@@ -83,22 +69,24 @@ export default function Certificates() {
     }
   };
 
-  useEffect(() => {
-    fetchCertifs();
-  }, []);
+  useEffect(() => { fetchFacils(); }, []);
 
   // ===== Derived data =====
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let arr = certifs;
-    if (q) arr = arr.filter((c) => c.title?.toLowerCase().includes(q));
+    let arr = facils;
+    if (q) {
+      arr = arr.filter(
+        (c) => c.title?.toLowerCase().includes(q) || c.desc?.toLowerCase?.().includes(q)
+      );
+    }
     arr = [...arr].sort((a, b) => {
       const x = a.title?.toLowerCase() || "";
       const y = b.title?.toLowerCase() || "";
       return sortAsc ? x.localeCompare(y) : y.localeCompare(x);
     });
     return arr;
-  }, [certifs, search, sortAsc]);
+  }, [facils, search, sortAsc]);
 
   // ===== Handlers =====
   const handleSubmit = async (e) => {
@@ -113,22 +101,22 @@ export default function Certificates() {
       let res;
 
       if (editing) {
+        // UPDATE
         if (form.image instanceof File) {
           const fd = new FormData();
           fd.append("title", form.title.trim());
+          fd.append("desc", (form.desc || "").trim());
           fd.append("file", form.image);
-          res = await fetch(`/api/certif/${editing.id}`, {
-            method: "PUT",
-            body: fd,
-          });
+          res = await fetch(`${API_BASE}?id=${editing.id}`, { method: "PUT", body: fd });
         } else {
-          res = await fetch(`/api/certif/${editing.id}`, {
+          res = await fetch(`${API_BASE}?id=${editing.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title: form.title.trim() }),
+            body: JSON.stringify({ title: form.title.trim(), desc: (form.desc || "").trim() }),
           });
         }
       } else {
+        // CREATE
         if (!(form.image instanceof File)) {
           Swal.fire("Validation", "Please choose an image file.", "warning");
           setUploading(false);
@@ -136,19 +124,16 @@ export default function Certificates() {
         }
         const fd = new FormData();
         fd.append("title", form.title.trim());
+        fd.append("desc", (form.desc || "").trim());
         fd.append("file", form.image);
-        res = await fetch(`/api/certif`, { method: "POST", body: fd });
+        res = await fetch(API_BASE, { method: "POST", body: fd });
       }
 
       if (!res.ok) throw new Error(editing ? "Update failed" : "Create failed");
 
-      await fetchCertifs();
+      await fetchFacils();
       closeModal();
-      Swal.fire(
-        "Success",
-        editing ? "Certificate updated" : "Certificate created",
-        "success"
-      );
+      Swal.fire("Success", editing ? "Facility updated" : "Facility created", "success");
     } catch (err) {
       Swal.fire("Error", err.message || "Operation failed", "error");
     } finally {
@@ -158,7 +143,7 @@ export default function Certificates() {
 
   const startEdit = (c) => {
     setEditing(c);
-    setForm({ title: c.title, image: "" });
+    setForm({ title: c.title || "", desc: c.desc || "", image: "" });
     setPreview(c.imageUrl || "");
     setImgOk(true);
     setIsModalOpen(true);
@@ -166,7 +151,7 @@ export default function Certificates() {
 
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
-      title: "Delete this certificate?",
+      title: "Delete this facility?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, delete",
@@ -175,10 +160,14 @@ export default function Certificates() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const res = await fetch(`/api/certif/${id}`, { method: "DELETE" });
+      const res = await fetch(API_BASE, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
       if (!res.ok) throw new Error("Delete failed");
-      await fetchCertifs();
-      Swal.fire("Deleted", "Certificate has been removed", "success");
+      await fetchFacils();
+      Swal.fire("Deleted", "Facility has been removed", "success");
     } catch (err) {
       Swal.fire("Error", err.message || "Delete failed", "error");
     }
@@ -217,36 +206,34 @@ export default function Certificates() {
   const onPickFile = () => fileInputRef.current?.click();
 
   const onFilesSelected = (file) => {
-    if (!file) return;
-    if (!["image/png", "image/jpeg"].includes(file.type)) {
-      Swal.fire("Validation", "Only PNG/JPEG are allowed.", "warning");
-      return;
+    if (file) {
+      if (!["image/png", "image/jpeg"].includes(file.type)) {
+        Swal.fire("Validation", "Only PNG/JPEG are allowed.", "warning");
+        return;
+      }
+      const MAX = 8 * 1024 * 1024; // 8MB
+      if (file.size > MAX) {
+        Swal.fire("Validation", `Max file size is 8MB. Got ${(file.size / 1024 / 1024).toFixed(2)}MB.`, "warning");
+        return;
+      }
+      setForm((s) => ({ ...s, image: file }));
+      const url = URL.createObjectURL(file);
+      setPreview((old) => {
+        if (old?.startsWith("blob:")) URL.revokeObjectURL(old);
+        return url;
+      });
+      setImgOk(true);
     }
-    const MAX = 5 * 1024 * 1024; // 5MB sesuai placeholder text
-    if (file.size > MAX) {
-      Swal.fire(
-        "Validation",
-        `Max file size is 5MB. Got ${(file.size / 1024 / 1024).toFixed(2)}MB.`,
-        "warning"
-      );
-      return;
-    }
-    setForm((s) => ({ ...s, image: file }));
-    const url = URL.createObjectURL(file);
-    setPreview((old) => {
-      if (old?.startsWith("blob:")) URL.revokeObjectURL(old);
-      return url;
-    });
-    setImgOk(true);
   };
 
-  // ✅ PAKAI EVENT REACT (bukan addEventListener manual)
+  // ✅ Pakai event React langsung (lebih stabil di Next/React)
   const handleDragEnter = (e) => {
     e.preventDefault(); e.stopPropagation();
     setDragActive(true);
   };
   const handleDragOver = (e) => {
     e.preventDefault(); e.stopPropagation();
+    // hint untuk browser
     if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
     setDragActive(true);
   };
@@ -264,7 +251,7 @@ export default function Certificates() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditing(null);
-    setForm({ title: "", image: "" });
+    setForm({ title: "", desc: "", image: "" });
     if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
     setPreview("");
     setDragActive(false);
@@ -274,49 +261,18 @@ export default function Certificates() {
     <div className={`min-h-screen flex flex-col bg-gradient-to-br from-emerald-50 to-white ${poppins.className}`}>
       {/* NAVBAR */}
       <nav className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-between px-4 py-3 shadow-lg sticky top-0 z-50">
-        {/* SIDEBAR */}
-        <Sidebar
-          open={sidebarOpen}
-          pathname={pathname}
-          onClose={() => setSidebarOpen(false)}
-          role={role}
-        />
-
-        {/* Overlay */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 bg-black/30 z-30" onClick={() => setSidebarOpen(false)} />
-        )}
-
-        {/* toggles */}
-        <button className="md:hidden p-2" onClick={() => setSidebarOpen((s) => !s)}>
-          <FaBars size={22} />
-        </button>
-        <button className="hidden md:block p-2 cursor-pointer" onClick={() => setSidebarOpen((s) => !s)}>
-          <FaBars size={22} />
-        </button>
-
+        <Sidebar open={sidebarOpen} pathname={pathname} onClose={() => setSidebarOpen(false)} role={role} />
+        {sidebarOpen && <div className="fixed inset-0 bg-black/30 z-30" onClick={() => setSidebarOpen(false)} />}
+        <button className="md:hidden p-2" onClick={() => setSidebarOpen((s) => !s)}><FaBars size={22} /></button>
+        <button className="hidden md:block p-2 cursor-pointer" onClick={() => setSidebarOpen((s) => !s)}><FaBars size={22} /></button>
         <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide">Admin Dashboard</h1>
-
-        {/* right */}
         <div className="flex items-center gap-4">
           {role === "user" && (
-            <Link
-              href="/admin/profile"
-              className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
-              title="Profile"
-              aria-label="Profile"
-            >
+            <Link href="/admin/profile" className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40" title="Profile" aria-label="Profile">
               <FaUser className="cursor-pointer" />
             </Link>
           )}
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Logout"
-            className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
-            aria-label="Logout"
-          >
+          <button type="button" onClick={handleLogout} title="Logout" className="p-1 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40" aria-label="Logout">
             <FaSignOutAlt className="cursor-pointer" />
           </button>
         </div>
@@ -330,23 +286,23 @@ export default function Certificates() {
             <div className="bg-emerald-600 text-white px-6 py-5">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
-                  <FaCertificate className="text-white" size={22} />
+                  <FaBuilding className="text-white" size={22} />
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-bold">Certificates</h2>
-                    <p className="text-white/90 text-sm">Manage your company certificates</p>
+                    <h2 className="text-xl sm:text-2xl font-bold">Facilities</h2>
+                    <p className="text-white/90 text-sm">Manage your company facilities</p>
                   </div>
                 </div>
                 <button
                   onClick={() => {
                     setEditing(null);
-                    setForm({ title: "", image: "" });
+                    setForm({ title: "", desc: "", image: "" });
                     setImgOk(true);
                     setPreview("");
                     setIsModalOpen(true);
                   }}
                   className="inline-flex items-center gap-2 bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-xl shadow cursor-pointer"
                 >
-                  <FaPlus /> Add Certificate
+                  <FaPlus /> Add Facility
                 </button>
               </div>
             </div>
@@ -358,7 +314,7 @@ export default function Certificates() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search certificates…"
+                  placeholder="Search facilities…"
                   className="w-full pl-10 pr-3 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700 placeholder:text-gray-400"
                 />
               </div>
@@ -393,53 +349,41 @@ export default function Certificates() {
                 <FaRegFileAlt />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">No data yet</h3>
-              <p className="text-gray-500">Add your first certificate to get started.</p>
+              <p className="text-gray-500">Add your first facility to get started.</p>
               <button
                 onClick={() => {
                   setEditing(null);
-                  setForm({ title: "", image: "" });
+                  setForm({ title: "", desc: "", image: "" });
                   setImgOk(true);
                   setPreview("");
                   setIsModalOpen(true);
                 }}
                 className="mt-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl shadow"
               >
-                <FaPlus /> Add Certificate
+                <FaPlus /> Add Facility
               </button>
             </div>
           ) : (
             <div className={`grid gap-4 ${dense ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}>
               {filtered.map((c) => (
-                <div
-                  key={c.id}
-                  className="group border rounded-2xl shadow-sm bg-white overflow-hidden flex flex-col transition hover:shadow-md hover:-translate-y-0.5"
-                >
+                <div key={c.id} className="group border rounded-2xl shadow-sm bg-white overflow-hidden flex flex-col transition hover:shadow-md hover:-translate-y-0.5">
                   <div className="w-full aspect-[4/3] bg-gray-100 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={c.imageUrl}
                       alt={c.title}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src =
-                          "https://via.placeholder.com/600x400.png?text=Image+Not+Available";
-                      }}
+                      onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/600x400.png?text=Image+Not+Available"; }}
                     />
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
                     <h3 className="font-semibold text-gray-900 line-clamp-2">{c.title}</h3>
-
+                    {c.desc && <p className="mt-1 text-sm text-gray-600 line-clamp-2">{c.desc}</p>}
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => startEdit(c)}
-                        className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg cursor-pointer"
-                      >
+                      <button onClick={() => startEdit(c)} className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg cursor-pointer">
                         <FaEdit /> Edit
                       </button>
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="inline-flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-lg cursor-pointer"
-                      >
+                      <button onClick={() => handleDelete(c.id)} className="inline-flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-lg cursor-pointer">
                         <FaTrash /> Delete
                       </button>
                     </div>
@@ -459,9 +403,7 @@ export default function Certificates() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-xl p-6">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">
-              {editing ? "Edit Certificate" : "Add Certificate"}
-            </h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-900">{editing ? "Edit Facility" : "Add Facility"}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-800">Title</label>
@@ -470,8 +412,19 @@ export default function Certificates() {
                   value={form.title}
                   onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))}
                   className="border px-3 py-2 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700 placeholder:text-gray-400"
-                  placeholder="Certificate title"
+                  placeholder="Facility title"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-800">Description</label>
+                <textarea
+                  value={form.desc}
+                  onChange={(e) => setForm((s) => ({ ...s, desc: e.target.value }))}
+                  className="border px-3 py-2 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700 placeholder:text-gray-400"
+                  placeholder="Short description (optional)"
+                  rows={3}
                 />
               </div>
 
@@ -480,8 +433,6 @@ export default function Certificates() {
                 <label className="block text-sm font-medium mb-2 text-gray-800">Upload Image</label>
                 <div
                   ref={dropRef}
-                  role="button"
-                  tabIndex={0}
                   onClick={onPickFile}
                   onDragEnter={handleDragEnter}
                   onDragOver={handleDragOver}
@@ -493,7 +444,7 @@ export default function Certificates() {
                 >
                   <FaImage className="text-gray-500 mb-2" size={36} />
                   <p className="text-gray-700 font-medium">Drag & drop your image here</p>
-                  <p className="text-gray-500 text-sm">or click to choose a file (PNG/JPEG, max 5MB)</p>
+                  <p className="text-gray-500 text-sm">or click to choose a file (PNG/JPEG, max 8MB)</p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -503,9 +454,7 @@ export default function Certificates() {
                   />
                 </div>
 
-                {!imgOk && (
-                  <p className="text-xs text-rose-600 mt-1">Invalid file / failed to load.</p>
-                )}
+                {!imgOk && <p className="text-xs text-rose-600 mt-1">Invalid file / failed to load.</p>}
 
                 {/* Preview */}
                 {preview && (
@@ -523,18 +472,10 @@ export default function Certificates() {
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 rounded-xl border hover:bg-gray-50 text-gray-700 cursor-pointer"
-                >
+                <button type="button" onClick={closeModal} className="px-4 py-2 rounded-xl border hover:bg-gray-50 text-gray-700 cursor-pointer">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-60 cursor-pointer"
-                >
+                <button type="submit" disabled={uploading} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-60 cursor-pointer">
                   {uploading ? "Saving…" : editing ? "Update" : "Save"}
                 </button>
               </div>

@@ -6,6 +6,7 @@ import Service from "./components/Service";
 import Gallery from "./components/Gallery";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import OurFacilitiesSection from "./components/Facilities";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <Clients />
       <About />
       <Service />
+      <OurFacilitiesSection />
       <Gallery />
       <Contact />
       <Footer />

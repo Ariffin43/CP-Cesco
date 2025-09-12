@@ -67,7 +67,7 @@ export default function ContactModern() {
   };
 
   return (
-    <section id="contact" className="relative overflow-hidden bg-[#F3F5F7]">
+    <section id="contact" className="relative overflow-hidden bg-white">
       {/* Header */}
       <div className="px-4 sm:px-6 lg:px-10 2xl:px-14 pt-16 sm:pt-20">
         <motion.div

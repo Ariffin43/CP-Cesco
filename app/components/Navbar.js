@@ -72,6 +72,7 @@ export default function Navbar() {
     { label: "Our Client", id: "clients", href: "/#clients" },
     { label: "Service", id: "services", subMenu: true },
     { label: "Certificate", id: "certificate", href: "/certificate" },
+    { label: "Our Facilities", id: "facilities", href: "/#facilities" },
     { label: "Gallery", id: "gallery", href: "/#gallery" },
     { label: "Contact Us", id: "contact", href: "/#contact" },
   ];

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaHome, FaTable, FaCertificate, FaImages, FaTools } from "react-icons/fa";
+import { FaHome, FaTable, FaCertificate, FaImages, FaTools, FaBuilding } from "react-icons/fa";
 
 export default function Sidebar({ open, pathname, onClose, role }) {
   const isActive = (p) => pathname === p;
@@ -77,6 +77,20 @@ export default function Sidebar({ open, pathname, onClose, role }) {
                     </Link>
                     </li>
 
+                    <li>
+                    <Link
+                        href="/admin/facilities"
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                        isActive("/admin/facilities")
+                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                            : "hover:bg-gray-50"
+                        }`}
+                        onClick={onClose}
+                    >
+                        <FaBuilding /> Facilities
+                    </Link>
+                    </li>
+                    
                     <li>
                     <Link
                         href="/admin/service"

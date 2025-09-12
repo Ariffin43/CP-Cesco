@@ -136,7 +136,7 @@ export default function Gallery() {
   }, [lightboxIndex, closeLightbox, lbPrev, lbNext]);
 
   return (
-    <section id="gallery" className="w-full py-20 bg-white">
+    <section id="gallery" className="w-full py-20 bg-[#F3F5F7]">
       <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-24 2xl:px-32 mx-auto">
         {/* Header + Navigation */}
         <motion.div

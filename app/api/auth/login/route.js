@@ -5,12 +5,21 @@ import { signSession } from '@/lib/auth';
 
 export async function POST(req) {
   const { email, password } = await req.json();
+  console.log("Try login email:", email);
 
   const user = await prisma.users.findUnique({ where: { email } });
-  if (!user) return NextResponse.json({ message: 'Email atau password salah' }, { status: 401 });
+  console.log("Found user:", user);
+
+  if (!user) {
+    return NextResponse.json({ message: 'Email atau password salah' }, { status: 401 });
+  }
 
   const ok = await bcrypt.compare(password, user.password);
-  if (!ok) return NextResponse.json({ message: 'Email atau password salah' }, { status: 401 });
+  console.log("Password match:", ok);
+
+  if (!ok) {
+    return NextResponse.json({ message: 'Email atau password salah' }, { status: 401 });
+  }
 
   const token = await signSession({ uid: user.id, email: user.email, role: user.role }, { expiresIn: '2h' });
 

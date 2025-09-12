@@ -15,6 +15,37 @@ import Link from "next/link";
 const poppins = Poppins({ subsets: ["latin"], weight: ["400","500","600","700"] });
 const API_BASE = "/api/facilities";
 
+async function compressImage(
+  file,
+  { maxWidth = 1920, maxHeight = 1920, quality = 0.82, mime = "image/jpeg" } = {}
+) {
+  const img = document.createElement("img");
+  const url = URL.createObjectURL(file);
+
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = rej;
+    img.src = url;
+  });
+
+  let { width, height } = img;
+  const scale = Math.min(1, maxWidth / width, maxHeight / height);
+  width = Math.round(width * scale);
+  height = Math.round(height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const blob = await new Promise((res) => canvas.toBlob(res, mime, quality));
+  URL.revokeObjectURL(url);
+
+  // fallback kalau toBlob gagal (jarang)
+  return new File([blob || file], file.name.replace(/\.\w+$/, ".jpg"), { type: mime });
+}
+
 export default function FacilitiesAdmin() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -205,25 +236,35 @@ export default function FacilitiesAdmin() {
   // ===== File select / Drag & Drop =====
   const onPickFile = () => fileInputRef.current?.click();
 
-  const onFilesSelected = (file) => {
-    if (file) {
-      if (!["image/png", "image/jpeg"].includes(file.type)) {
-        Swal.fire("Validation", "Only PNG/JPEG are allowed.", "warning");
+  const onFilesSelected = async (file) => {
+    if (!file) return;
+    const LIMIT_VERCL = 4 * 1024 * 1024;
+    let f = file;
+
+    try {
+      if (f.size > LIMIT_VERCL || !["image/jpeg", "image/png"].includes(f.type)) {
+        f = await compressImage(f, { quality: 0.82, maxWidth: 1920, maxHeight: 1920, mime: "image/jpeg" });
+      }
+      if (f.size > LIMIT_VERCL) {
+        f = await compressImage(f, { quality: 0.7, maxWidth: 1600, maxHeight: 1600, mime: "image/jpeg" });
+      }
+      if (f.size > LIMIT_VERCL) {
+        Swal.fire("Validation", `Setelah kompres masih ${(f.size/1024/1024).toFixed(2)}MB. Coba gambar lain.`, "warning");
         return;
       }
-      const MAX = 15 * 1024 * 1024; // 8MB
-      if (file.size > MAX) {
-        Swal.fire("Validation", `Max file size is 15MB. Got ${(file.size / 1024 / 1024).toFixed(2)}MB.`, "warning");
-        return;
-      }
-      setForm((s) => ({ ...s, image: file }));
-      const url = URL.createObjectURL(file);
-      setPreview((old) => {
-        if (old?.startsWith("blob:")) URL.revokeObjectURL(old);
-        return url;
-      });
-      setImgOk(true);
+    } catch (err) {
+      console.error("compress failed:", err);
+      Swal.fire("Error", "Gagal memproses gambar. Coba file lain.", "error");
+      return;
     }
+
+    setForm((s) => ({ ...s, image: f }));
+    const url = URL.createObjectURL(f);
+    setPreview((old) => {
+      if (old?.startsWith("blob:")) URL.revokeObjectURL(old);
+      return url;
+    });
+    setImgOk(true);
   };
 
   // ✅ Pakai event React langsung (lebih stabil di Next/React)
@@ -448,9 +489,9 @@ export default function FacilitiesAdmin() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/avif"
                     className="hidden"
-                    onChange={(e) => onFilesSelected(e.target.files?.[0])}
+                    onChange={(e) => onFilesSelected(e.target.files?.[0] || null)}
                   />
                 </div>
 

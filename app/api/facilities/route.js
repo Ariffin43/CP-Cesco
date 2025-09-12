@@ -3,20 +3,23 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export const runtime = "nodejs";
+
+// Bukan untuk menaikkan limit Vercel (tetap ada di edge), tapi biar validasi lokal & error message konsisten
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "20mb",
+      sizeLimit: "5mb", // selaras dengan strategi FE < ~4MB
     },
   },
 };
 
 const isDev = process.env.NODE_ENV !== "production";
 
+// ✅ SATU sumber kebenaran
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png"];
-const MAX_SIZE = 15 * 1024 * 1024;
+const MAX_SIZE = 4 * 1024 * 1024; // 4MB — samakan dengan FE
 
-// GET: kembalikan array (sesuai page kamu)
+// GET
 export async function GET() {
   try {
     const rows = await prisma.facilities.findMany({
@@ -43,7 +46,7 @@ export async function GET() {
   }
 }
 
-// POST: create (wajib file)
+// POST (create)
 export async function POST(req) {
   try {
     const form = await req.formData();
@@ -57,31 +60,34 @@ export async function POST(req) {
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ message: "Image file is required (field name: 'file')." }, { status: 400 });
     }
-
-    const allowed = ["image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type || "")) {
+    if (!ALLOWED.includes(file.type || "")) {
       return NextResponse.json(
         { message: `Only JPG/JPEG/PNG allowed. Got: ${file.type || "unknown"}` },
         { status: 415 }
       );
     }
-
-    const MAX_SIZE = 15 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { message: `Max file size is 15MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` },
+        { message: `Max file size is ${(MAX_SIZE/1024/1024).toFixed(0)}MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` },
         { status: 413 }
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (buffer.length > MAX_SIZE) {
+      return NextResponse.json(
+        { message: `Decoded buffer exceeds ${(MAX_SIZE/1024/1024).toFixed(0)}MB.` },
+        { status: 413 }
+      );
+    }
 
     const created = await prisma.facilities.create({
       data: {
         title,
         desc: desc || null,
-        gambar: buffer,
+        gambar: buffer, // pastikan kolom BYTEA/bytea di PostgreSQL
       },
+      select: { id: true, title: true, desc: true, created_at: true, updated_at: true },
     });
 
     return NextResponse.json(
@@ -97,13 +103,11 @@ export async function POST(req) {
     );
   } catch (e) {
     console.error("POST /api/facilities error:", e);
-    return NextResponse.json(
-      { message: "Failed to create", error: String(e) },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Failed to create", error: String(e) }, { status: 500 });
   }
 }
 
+// PUT (update)
 export async function PUT(req) {
   try {
     const url = new URL(req.url);
@@ -112,8 +116,8 @@ export async function PUT(req) {
       return NextResponse.json({ message: "Query param 'id' is required." }, { status: 400 });
     }
 
-    const ct = req.headers.get("content-type") || "";
-    const data = {};
+    const ct = (req.headers.get("content-type") || "").toLowerCase();
+    const data = /** @type {any} */ ({});
 
     if (ct.includes("multipart/form-data")) {
       const form = await req.formData();
@@ -126,12 +130,25 @@ export async function PUT(req) {
 
       if (file && file instanceof File) {
         if (!ALLOWED.includes(file.type || "")) {
-          return NextResponse.json({ message: `Only JPG/JPEG/PNG allowed. Got: ${file.type || "unknown"}` }, { status: 415 });
+          return NextResponse.json(
+            { message: `Only JPG/JPEG/PNG allowed. Got: ${file.type || "unknown"}` },
+            { status: 415 }
+          );
         }
         if (file.size > MAX_SIZE) {
-          return NextResponse.json({ message: `Max file size is 15MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` }, { status: 413 });
+          return NextResponse.json(
+            { message: `Max file size is ${(MAX_SIZE/1024/1024).toFixed(0)}MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` },
+            { status: 413 }
+          );
         }
-        data.gambar = Buffer.from(await file.arrayBuffer());
+        const buffer = Buffer.from(await file.arrayBuffer());
+        if (buffer.length > MAX_SIZE) {
+          return NextResponse.json(
+            { message: `Decoded buffer exceeds ${(MAX_SIZE/1024/1024).toFixed(0)}MB.` },
+            { status: 413 }
+          );
+        }
+        data.gambar = buffer;
       }
     } else if (ct.includes("application/json")) {
       const body = await req.json().catch(() => ({}));
@@ -145,7 +162,6 @@ export async function PUT(req) {
       return NextResponse.json({ message: "No fields to update." }, { status: 400 });
     }
 
-    // kalau updated_at tidak pakai @updatedAt, set manual
     data.updated_at = new Date();
 
     const updated = await prisma.facilities.update({
@@ -168,6 +184,7 @@ export async function PUT(req) {
   }
 }
 
+// DELETE
 export async function DELETE(req) {
   try {
     const body = await req.json().catch(() => null);

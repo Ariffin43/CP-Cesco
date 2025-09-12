@@ -444,7 +444,7 @@ export default function FacilitiesAdmin() {
                 >
                   <FaImage className="text-gray-500 mb-2" size={36} />
                   <p className="text-gray-700 font-medium">Drag & drop your image here</p>
-                  <p className="text-gray-500 text-sm">or click to choose a file (PNG/JPEG, max 8MB)</p>
+                  <p className="text-gray-500 text-sm">or click to choose a file (PNG/JPEG, max 15MB)</p>
                   <input
                     ref={fileInputRef}
                     type="file"

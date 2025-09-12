@@ -3,6 +3,14 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export const runtime = "nodejs";
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "20mb",
+    },
+  },
+};
+
 const isDev = process.env.NODE_ENV !== "production";
 
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png"];
@@ -121,7 +129,7 @@ export async function PUT(req) {
           return NextResponse.json({ message: `Only JPG/JPEG/PNG allowed. Got: ${file.type || "unknown"}` }, { status: 415 });
         }
         if (file.size > MAX_SIZE) {
-          return NextResponse.json({ message: `Max file size is 8MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` }, { status: 413 });
+          return NextResponse.json({ message: `Max file size is 15MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` }, { status: 413 });
         }
         data.gambar = Buffer.from(await file.arrayBuffer());
       }

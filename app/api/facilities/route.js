@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 const isDev = process.env.NODE_ENV !== "production";
 
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png"];
-const MAX_SIZE = 8 * 1024 * 1024; // 8MB
+const MAX_SIZE = 15 * 1024 * 1024;
 
 // GET: kembalikan array (sesuai page kamu)
 export async function GET() {
@@ -43,15 +43,27 @@ export async function POST(req) {
     const desc = form.get("desc") != null ? String(form.get("desc")).trim() : null;
     const file = form.get("file");
 
-    if (!title) return NextResponse.json({ message: "Title is required." }, { status: 400 });
+    if (!title) {
+      return NextResponse.json({ message: "Title is required." }, { status: 400 });
+    }
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ message: "Image file is required (field name: 'file')." }, { status: 400 });
     }
-    if (!ALLOWED.includes(file.type || "")) {
-      return NextResponse.json({ message: `Only JPG/JPEG/PNG allowed. Got: ${file.type || "unknown"}` }, { status: 415 });
+
+    const allowed = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowed.includes(file.type || "")) {
+      return NextResponse.json(
+        { message: `Only JPG/JPEG/PNG allowed. Got: ${file.type || "unknown"}` },
+        { status: 415 }
+      );
     }
+
+    const MAX_SIZE = 15 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ message: `Max file size is 8MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` }, { status: 413 });
+      return NextResponse.json(
+        { message: `Max file size is 15MB. Got ${(file.size/1024/1024).toFixed(2)}MB.` },
+        { status: 413 }
+      );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -61,10 +73,7 @@ export async function POST(req) {
         title,
         desc: desc || null,
         gambar: buffer,
-        // kalau `updated_at` tidak pakai @updatedAt, boleh set manual:
-        updated_at: new Date(),
       },
-      select: { id: true, title: true, desc: true, created_at: true, updated_at: true },
     });
 
     return NextResponse.json(
@@ -80,15 +89,13 @@ export async function POST(req) {
     );
   } catch (e) {
     console.error("POST /api/facilities error:", e);
-    return NextResponse.json({ message: "Failed to create", error: String(e) }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to create", error: String(e) },
+      { status: 500 }
+    );
   }
 }
 
-/**
- * PUT /api/facilities?id=123
- * - multipart/form-data: bisa update title/desc + file (opsional)
- * - application/json: update title/desc tanpa file
- */
 export async function PUT(req) {
   try {
     const url = new URL(req.url);

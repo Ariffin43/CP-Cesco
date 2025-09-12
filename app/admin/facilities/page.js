@@ -211,9 +211,9 @@ export default function FacilitiesAdmin() {
         Swal.fire("Validation", "Only PNG/JPEG are allowed.", "warning");
         return;
       }
-      const MAX = 8 * 1024 * 1024; // 8MB
+      const MAX = 15 * 1024 * 1024; // 8MB
       if (file.size > MAX) {
-        Swal.fire("Validation", `Max file size is 8MB. Got ${(file.size / 1024 / 1024).toFixed(2)}MB.`, "warning");
+        Swal.fire("Validation", `Max file size is 15MB. Got ${(file.size / 1024 / 1024).toFixed(2)}MB.`, "warning");
         return;
       }
       setForm((s) => ({ ...s, image: file }));

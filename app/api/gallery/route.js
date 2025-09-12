@@ -1,6 +1,6 @@
 // app/api/gallery/route.js
 import { NextResponse } from "next/server";
-import prisma from "../../../lib/prisma";
+import prisma from "@/lib/prisma";
 
 export const runtime = "nodejs";
 const isDev = process.env.NODE_ENV !== "production";

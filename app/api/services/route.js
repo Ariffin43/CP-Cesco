@@ -1,9 +1,6 @@
 // app/api/services/route.js
 import { NextResponse } from "next/server";
-import prisma from "../../../lib/prisma";
-import { writeFile } from "fs/promises";
-import path from "path";
-import fs from "fs";
+import prisma from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

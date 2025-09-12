@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { normalizeStatus, parseDateOnly, toYmdFromDateOnly } from "../../../lib/dateUtils";
+import { prisma } from "@/lib/prisma";
+import { normalizeStatus, parseDateOnly, toYmdFromDateOnly } from "@/lib/dateUtils";
 
 export async function GET() {
   try {

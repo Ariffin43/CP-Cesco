@@ -355,26 +355,23 @@ export default function Projects() {
   const confirmBulkDelete = async () => {
     if (selectedIds.size === 0) return;
 
-    const res = await Swal.fire({
-      title: `Hapus ${selectedIds.size} data terpilih?`,
-      text: "Aksi ini tidak bisa dibatalkan.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Ya, hapus semua",
-      cancelButtonText: "Batal",
-    });
-    if (!res.isConfirmed) return;
+    const ids = [...selectedIds];
+    const prev = projects;
+
+    setProjects(prev.filter(p => !selectedIds.has(p.id)));
+    setSelectedIds(new Set());
 
     try {
-      // hapus satu per satu (aman dengan API sekarang)
-      for (const id of selectedIds) {
-        const r = await fetch(`/api/projects/${id}`, { method: "DELETE" });
-        if (!r.ok) throw new Error(`Gagal hapus id=${id}`);
-      }
-      await loadProjects();
-      Swal.fire({ icon: "success", title: "Terhapus", text: "Data terpilih berhasil dihapus.", timer: 1500, showConfirmButton: false });
+      const res = await fetch("/api/projects/bulk-delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error("Gagal bulk delete");
+      Swal.fire({ icon: "success", title: "Terhapus", timer: 1000, showConfirmButton: false });
     } catch (e) {
-      Swal.fire({ icon: "error", title: "Error", text: e.message || "Sebagian gagal dihapus." });
+      setProjects(prev);
+      Swal.fire({ icon: "error", title: "Error", text: e.message || "Gagal hapus" });
     }
   };
 
@@ -388,7 +385,7 @@ export default function Projects() {
       doc.text(title, 40, 40);
 
       const head = [[
-        "N", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
+        "NO", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
         "PROJECT NAME", "DESCRIPTION OF JOB", "START DATE", "FINISH DATE", "STATUS",
       ]];
 
@@ -461,7 +458,7 @@ export default function Projects() {
   const exportExcel = () => {
     const title = "SUMMARY OF PROJECT DOCUMENT";
     const headers = [
-      "N", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
+      "NO", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
       "PROJECT NAME", "DESCRIPTION OF JOB", "START DATE", "FINISH DATE", "STATUS"
     ];
 
@@ -498,7 +495,7 @@ export default function Projects() {
 
       // Header cells
       const headerTitles = [
-        "N", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
+        "NO", "DATE NO", "JOB NO", "CUSTOMER / CLIENT",
         "PROJECT NAME", "DESCRIPTION OF JOB", "START DATE", "FINISH DATE", "STATUS"
       ];
 
@@ -558,7 +555,6 @@ export default function Projects() {
       Swal.fire({ icon: "error", title: "Gagal ekspor Word", text: String(e) });
     }
   };
-
 
   /* ---------- Import ---------- */
   const handleFileUpload = (e) => {
@@ -626,69 +622,32 @@ export default function Projects() {
     return "Pending";
   }
 
-  const handleImport = () => {
-    if (!previewData.length) {
-      Swal.fire({ icon: "error", title: "Gagal Import", text: "File tidak ada isinya!" });
-      return;
-    }
-    const header = previewData[0].map((h) => String(h).trim());
-    const rows = previewData.slice(1);
-    if (!rows.length) {
-      Swal.fire({ icon: "error", title: "Gagal Import", text: "Tidak ada baris data pada file." });
-      return;
-    }
+  const handleImport = async () => {
+    const payload = imported;
 
-    const iJobNo  = findIndexByAliases(header, "JOB NO");
-    const iCust   = findIndexByAliases(header, "CUSTOMER / CLIENT");
-    const iPName  = findIndexByAliases(header, "PROJECT NAME");
-    const iDesc   = findIndexByAliases(header, "DESCRIPTION OF JOB");
-    const iStart  = findIndexByAliases(header, "START DATE");
-    const iFinish = findIndexByAliases(header, "FINISH DATE");
-    const iStatus = findIndexByAliases(header, "STATUS");
-    const iPIC    = findIndexByAliases(header, "PIC");
-
-    const imported = rows
-      .map((row) => {
-        const hasAny = row?.some((v) => v !== null && v !== undefined && String(v).trim() !== "");
-        if (!hasAny) return null;
-        return {
-          jobNo: String(row[iJobNo] ?? "").trim(),
-          customer: String(row[iCust] ?? "").trim(),
-          projectName: String(row[iPName] ?? "").trim(),
-          description: String(row[iDesc] ?? "").trim(),
-          startDate: row[iStart]  ? toISOInput(row[iStart])  : "",
-          endDate:   row[iFinish] ? toISOInput(row[iFinish]) : "",
-          status: normalizeStatus(row[iStatus]),
-          pic: row[iPIC] && String(row[iPIC]).trim() !== "" ? String(row[iPIC]).trim() : "-",
-        };
-      })
-      .filter(Boolean);
-
-    (async () => {
-      try {
-        if (!imported.length) throw new Error("Semua baris kosong.");
-        for (const payload of imported) {
-          const res = await fetch("/api/projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-          if (!res.ok) {
-            const msg = await res.text().catch(() => "");
-            throw new Error(`Gagal import pada "${payload.jobNo}" (${res.status}) ${msg}`);
-          }
-        }
-        await loadProjects();
-        setIsImportModalOpen(false);
-        setPreviewData([]);
-        setUploading(false);
-        setUploadProgress(0);
-        setFileName("");
-        Swal.fire({ icon: "success", title: "Import berhasil", text: `${imported.length} baris ditambahkan.`, timer: 1500, showConfirmButton: false });
-      } catch (err) {
-        Swal.fire({ icon: "error", title: "Gagal Import", text: err.message || "Terjadi kesalahan." });
+    try {
+      const res = await fetch("/api/projects/bulk-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        throw new Error(msg || "Gagal import");
       }
-    })();
+
+      const mapped = payload.map(p => ({
+        id: Math.random(),
+        jobNo: p.jobNo, cust: p.customer, projectName: p.projectName, desc: p.description,
+        startDate: p.startDate, endDate: p.endDate, status: p.status, PIC: p.pic,
+        contractType: p.contract_type ?? "", addDuration: p.add_duration ?? null,
+      }));
+      setProjects(prev => [...mapped, ...prev]);
+      setIsImportModalOpen(false);
+      Swal.fire({ icon: "success", title: "Import berhasil", timer: 1200, showConfirmButton: false });
+    } catch (e) {
+      Swal.fire({ icon: "error", title: "Gagal Import", text: e.message });
+    }
   };
 
   /* ---------- Derived: filtered + paginated ---------- */

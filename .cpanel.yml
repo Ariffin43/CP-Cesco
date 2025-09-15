@@ -1,0 +1,7 @@
+deployment:
+  tasks:
+    - export NODE_ENV=production
+    - /bin/npm ci
+    - /bin/npm run migrate:deploy || true
+    - /bin/npm run build
+    - /bin/touch tmp/restart.txt

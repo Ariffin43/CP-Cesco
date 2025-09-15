@@ -30,7 +30,6 @@ export async function GET() {
 export async function POST(req) {
   try {
     const bodyRaw = await req.json();
-
     const normStr = (v) => String(v ?? "").trim();
 
     const jobNo       = normStr(bodyRaw.jobNo);
@@ -45,16 +44,9 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-
-    if (jobNo.length > 64) {
-      return NextResponse.json({ message: "jobNo maksimal 64 karakter." }, { status: 400 });
-    }
-    if (customer.length > 256) {
-      return NextResponse.json({ message: "customer maksimal 256 karakter." }, { status: 400 });
-    }
-    if (projectName.length > 256) {
-      return NextResponse.json({ message: "projectName maksimal 256 karakter." }, { status: 400 });
-    }
+    if (jobNo.length > 64)       return NextResponse.json({ message: "jobNo maksimal 64 karakter." }, { status: 400 });
+    if (customer.length > 256)   return NextResponse.json({ message: "customer maksimal 256 karakter." }, { status: 400 });
+    if (projectName.length > 256)return NextResponse.json({ message: "projectName maksimal 256 karakter." }, { status: 400 });
     if (picRaw && picRaw.length > 128) {
       return NextResponse.json({ message: "pic maksimal 128 karakter." }, { status: 400 });
     }
@@ -95,43 +87,27 @@ export async function POST(req) {
       const v = normStr(bodyRaw.contract_type);
       if (!v) {
         contract_type_normalized = null;
-      } else if (v === "LUMPSUM" || v === "DAILY_RATE") {
-        contract_type_normalized = v;
-      } else if (v === "DAILY RATE") {
-        contract_type_normalized = "DAILY_RATE";
+      } else if (v === "LUMPSUM" || v === "DAILY_RATE" || v === "DAILY RATE") {
+        contract_type_normalized = (v === "DAILY RATE") ? "DAILY_RATE" : v;
       } else {
         return NextResponse.json({ message: "contract_type tidak valid." }, { status: 400 });
       }
     }
 
-    const duplicate = await prisma.project.findFirst({
-      where: {
+    const created = await prisma.project.create({
+      data: {
         jobNo,
+        customer,
         projectName,
+        description,
+        startDate: start,
+        endDate: end,
+        status,
+        pic: picRaw || "-",
+        ...(contract_type_normalized !== undefined && { contract_type: contract_type_normalized }),
+        ...(add_duration_normalized !== undefined && { add_duration: add_duration_normalized }),
       },
-      select: { id: true },
     });
-    if (duplicate) {
-      return NextResponse.json(
-        { message: "Data duplikat: kombinasi jobNo & projectName sudah ada." },
-        { status: 409 }
-      );
-    }
-
-    const data = {
-      jobNo,
-      customer,
-      projectName,
-      description,
-      startDate: start,
-      endDate: end,
-      status,
-      pic: picRaw || "-",
-      ...(contract_type_normalized !== undefined && { contract_type: contract_type_normalized }),
-      ...(add_duration_normalized !== undefined && { add_duration: add_duration_normalized }),
-    };
-
-    const created = await prisma.project.create({ data });
 
     return NextResponse.json(
       {
@@ -158,7 +134,7 @@ export async function POST(req) {
 
     if (e?.code === "P2002") {
       return NextResponse.json(
-        { message: "Duplikat data melanggar constraint unik.", error: msg },
+        { message: "Constraint unik di DB masih aktif. Hapus dulu unique index/constraint.", error: msg },
         { status: 409 }
       );
     }

@@ -623,32 +623,82 @@ export default function Projects() {
   }
 
   const handleImport = async () => {
-    const payload = imported;
+    if (!previewData.length) {
+      Swal.fire({ icon: "error", title: "Gagal Import", text: "File tidak ada isinya!" });
+      return;
+    }
+    const header = previewData[0].map((h) => String(h).trim());
+    const rows = previewData.slice(1);
+    if (!rows.length) {
+      Swal.fire({ icon: "error", title: "Gagal Import", text: "Tidak ada baris data pada file." });
+      return;
+    }
+
+    const iJobNo  = findIndexByAliases(header, "JOB NO");
+    const iCust   = findIndexByAliases(header, "CUSTOMER / CLIENT");
+    const iPName  = findIndexByAliases(header, "PROJECT NAME");
+    const iDesc   = findIndexByAliases(header, "DESCRIPTION OF JOB");
+    const iStart  = findIndexByAliases(header, "START DATE");
+    const iFinish = findIndexByAliases(header, "FINISH DATE");
+    const iStatus = findIndexByAliases(header, "STATUS");
+    const iPIC    = findIndexByAliases(header, "PIC");
+
+    const imported = rows
+      .map((row) => {
+        const hasAny = row?.some((v) => v !== null && v !== undefined && String(v).trim() !== "");
+        if (!hasAny) return null;
+        return {
+          jobNo: String(row[iJobNo] ?? "").trim(),
+          customer: String(row[iCust] ?? "").trim(),
+          projectName: String(row[iPName] ?? "").trim(),
+          description: String(row[iDesc] ?? "").trim(),
+          startDate: row[iStart]  ? toISOInput(row[iStart])  : "",
+          endDate:   row[iFinish] ? toISOInput(row[iFinish]) : "",
+          status: normalizeStatus(row[iStatus]),
+          pic: row[iPIC] && String(row[iPIC]).trim() !== "" ? String(row[iPIC]).trim() : "-",
+        };
+      })
+      .filter(Boolean);
+
+    if (!imported.length) {
+      Swal.fire({ icon: "error", title: "Gagal Import", text: "Semua baris kosong." });
+      return;
+    }
 
     try {
+      setUploading(true);
+
       const res = await fetch("/api/projects/bulk-import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(imported),
       });
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
-        throw new Error(msg || "Gagal import");
+        throw new Error(msg || `HTTP ${res.status}`);
       }
 
-      const mapped = payload.map(p => ({
-        id: Math.random(),
-        jobNo: p.jobNo, cust: p.customer, projectName: p.projectName, desc: p.description,
-        startDate: p.startDate, endDate: p.endDate, status: p.status, PIC: p.pic,
-        contractType: p.contract_type ?? "", addDuration: p.add_duration ?? null,
-      }));
-      setProjects(prev => [...mapped, ...prev]);
+      await loadProjects();
+
       setIsImportModalOpen(false);
-      Swal.fire({ icon: "success", title: "Import berhasil", timer: 1200, showConfirmButton: false });
-    } catch (e) {
-      Swal.fire({ icon: "error", title: "Gagal Import", text: e.message });
+      setPreviewData([]);
+      setUploading(false);
+      setUploadProgress(0);
+      setFileName("");
+
+      Swal.fire({
+        icon: "success",
+        title: "Import berhasil",
+        text: `${imported.length} baris ditambahkan.`,
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      setUploading(false);
+      Swal.fire({ icon: "error", title: "Gagal Import", text: err.message || "Terjadi kesalahan." });
     }
   };
+
 
   /* ---------- Derived: filtered + paginated ---------- */
   const filtered = useMemo(() => {

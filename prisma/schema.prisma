@@ -22,7 +22,7 @@ model Project {
   projectName   String         @map("project_name") @db.VarChar(256)
   description   String         @map("description")
   startDate     DateTime       @map("start_date") @db.Date
-  endDate       DateTime       @map("end_date") @db.Date
+  endDate       DateTime?       @map("end_date") @db.Date
   status        project_status @default(Pending) @map("status")
   pic           String?        @map("pic") @db.VarChar(128)
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)

@@ -1,19 +1,22 @@
 ---
 deployment:
   tasks:
+    - export NODE="/opt/cpanel/ea-nodejs20/bin/node"
+    - export NPM="/opt/cpanel/ea-nodejs20/bin/npm"
+    - export NPX="/opt/cpanel/ea-nodejs20/bin/npx"
     - export PATH="/opt/cpanel/ea-nodejs20/bin:$PATH"
     - export NODE_ENV=production
     - export LOG="/home/cescoco/deploy.log"
 
     - echo "=== DEPLOY START $(date)" >> "$LOG"
 
-    - npm ci --include=dev        2>&1 | tee -a "$LOG"
+    - $NPM ci --include=dev                 2>&1 | tee -a "$LOG"
 
-    - ./node_modules/.bin/prisma --version         2>&1 | tee -a "$LOG"
-    - ./node_modules/.bin/prisma generate          2>&1 | tee -a "$LOG"
-    - ./node_modules/.bin/prisma migrate deploy    2>&1 | tee -a "$LOG" || true
+    - $NODE ./node_modules/.bin/prisma --version        2>&1 | tee -a "$LOG"
+    - $NODE ./node_modules/.bin/prisma generate         2>&1 | tee -a "$LOG"
+    - $NODE ./node_modules/.bin/prisma migrate deploy   2>&1 | tee -a "$LOG" || true
 
-    - npm run build               2>&1 | tee -a "$LOG"
+    - $NPM run build                         2>&1 | tee -a "$LOG"
 
     - mkdir -p tmp && touch tmp/restart.txt
     - echo "=== DEPLOY DONE $(date)" >> "$LOG"

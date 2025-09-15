@@ -1,7 +1,11 @@
+---
 deployment:
   tasks:
+    - export PATH="/opt/cpanel/ea-nodejs20/bin:$PATH"
     - export NODE_ENV=production
-    - /bin/npm ci
-    - /bin/npm run migrate:deploy || true
-    - /bin/npm run build
-    - /bin/touch tmp/restart.txt
+    - npm ci
+    - npx prisma generate
+    - npm run migrate:deploy || true
+    - npm run build
+    - mkdir -p tmp
+    - touch tmp/restart.txt

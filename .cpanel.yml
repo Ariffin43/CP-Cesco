@@ -1,0 +1,21 @@
+---
+deployment:
+  tasks:
+    # (Opsional) log kecil biar kelihatan di panel
+    - 'echo "===== Deploy started at $(date) ====="'
+
+    # 1) Install deps (pakai CI untuk lockfile; fallback ke install kalau CI gagal)
+    - 'npm ci || npm install'
+
+    # 2) Prisma: generate client + jalankan migrasi di server
+    - 'npx prisma generate'
+    - 'npx prisma migrate deploy'
+
+    # 3) Build Next.js (production)
+    - 'npm run build'
+
+    # 4) Restart Passenger (Node.js App) dengan sentuh restart.txt
+    - 'mkdir -p tmp'
+    - 'touch tmp/restart.txt'
+
+    - 'echo "===== Deploy finished at $(date) ====="'

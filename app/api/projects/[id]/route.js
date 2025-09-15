@@ -2,19 +2,29 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeStatus, parseDateOnly, toYmdFromDateOnly } from "@/lib/dateUtils";
 
+function addDays(dateObj, days) {
+  const d = new Date(dateObj);
+  d.setDate(d.getDate() + days);
+  // buang jam supaya tetap tipe DATE (bukan datetime) aman ke @db.Date
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 export async function PUT(req, { params }) {
   try {
     const id = BigInt(params.id);
     const body = await req.json();
 
-    const start = parseDateOnly(body.startDate);
-    const end = parseDateOnly(body.endDate);
-    if (!start || !end || end < start) {
-      return NextResponse.json(
-        { message: "Tanggal tidak valid. Gunakan YYYY-MM-DD; End >= Start." },
-        { status: 400 }
-      );
+    // 1) Ambil record lama
+    const existing = await prisma.project.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ message: "Project tidak ditemukan" }, { status: 404 });
     }
+
+    const jobNo       = String(body.jobNo ?? "").trim();
+    const customer    = String(body.customer ?? "").trim();
+    const projectName = String(body.projectName ?? "").trim();
+    const description = String(body.description ?? "").trim();
+    const pic         = (body.pic && String(body.pic).trim()) || "-";
 
     const status = normalizeStatus(body.status);
     const allowed = new Set(["Pending", "Ongoing", "Finish", "Cancel"]);
@@ -22,22 +32,51 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ message: "Status tidak valid." }, { status: 400 });
     }
 
-    let add_duration = null;
+    const start = parseDateOnly(body.startDate);
+    if (!start) {
+      return NextResponse.json({ message: "startDate tidak valid (YYYY-MM-DD)" }, { status: 400 });
+    }
+    
+    let baseEnd = null;
+    if (body.endDate !== undefined && body.endDate !== null && String(body.endDate).trim() !== "") {
+      baseEnd = parseDateOnly(body.endDate);
+      if (!baseEnd) {
+        return NextResponse.json({ message: "endDate tidak valid (YYYY-MM-DD)" }, { status: 400 });
+      }
+    } else {
+      baseEnd = existing.endDate;
+    }
+
+    let inc = null;
     if (body.add_duration !== undefined && body.add_duration !== null && body.add_duration !== "") {
       const n = Number(body.add_duration);
       if (!Number.isFinite(n) || n < 0) {
         return NextResponse.json({ message: "add_duration harus angka ≥ 0 atau kosong." }, { status: 400 });
       }
-      add_duration = n;
+      inc = n;
     }
 
-    let contract_type = null;
+    let finalEnd = baseEnd;
+    let finalAdd = existing.add_duration ?? 0;
+
+    if (inc !== null && inc > 0) {
+      const anchor = finalEnd || start; // kalau belum ada endDate, pakai startDate sebagai anchor
+      finalEnd = addDays(anchor, inc);
+      finalAdd = finalAdd + inc;
+    }
+
+    // Validasi urutan tanggal (kalau finalEnd ada)
+    if (finalEnd && finalEnd < start) {
+      return NextResponse.json({ message: "End tidak boleh < Start." }, { status: 400 });
+    }
+
+    let contract_type = existing.contract_type ?? null;
     if (typeof body.contract_type === "string") {
       const v = body.contract_type.trim();
-      if (v === "LUMPSUM" || v === "DAILY_RATE") {
-        contract_type = v;
-      } else if (v === "") {
+      if (v === "") {
         contract_type = null;
+      } else if (v === "LUMPSUM" || v === "DAILY_RATE") {
+        contract_type = v;
       } else if (v === "DAILY RATE") {
         contract_type = "DAILY_RATE";
       } else {
@@ -48,19 +87,18 @@ export async function PUT(req, { params }) {
     const updated = await prisma.project.update({
       where: { id },
       data: {
-        jobNo: String(body.jobNo ?? "").trim(),
-        customer: String(body.customer ?? "").trim(),
-        projectName: String(body.projectName ?? "").trim(),
-        description: String(body.description ?? "").trim(),
+        jobNo,
+        customer,
+        projectName,
+        description,
         startDate: start,
-        endDate: end,
+        endDate: finalEnd,
         status,
-        pic: (body.pic && String(body.pic).trim()) || "-",
+        pic,
         contract_type,
-        add_duration,
+        add_duration: finalAdd,
       },
     });
-
 
     return NextResponse.json({
       id: Number(updated.id),
@@ -69,7 +107,7 @@ export async function PUT(req, { params }) {
       projectName: updated.projectName,
       description: updated.description,
       startDate: toYmdFromDateOnly(updated.startDate),
-      endDate: toYmdFromDateOnly(updated.endDate),
+      endDate: updated.endDate ? toYmdFromDateOnly(updated.endDate) : null,
       status: updated.status,
       pic: updated.pic ?? "-",
       contract_type: updated.contract_type ?? null,

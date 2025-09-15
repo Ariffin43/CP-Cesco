@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    # Pakai Node/NPM dari nodevenv aplikasi (bukan /opt/cpanel/ea-nodejs..)
+    # Pakai node/npm dari nodevenv aplikasi (bukan /opt/cpanel/ea-nodejs..)
     - export NODE="/home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/node"
     - export NPM="/home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/npm"
     - export PATH="/home/cescoco/nodevenv/repositories/CP-Cesco/20/bin:$PATH"
@@ -9,20 +9,23 @@ deployment:
     - export LOG="/home/cescoco/deploy.log"
 
     - echo "=== DEPLOY START $(date)" >> "$LOG"
+    - $NODE -v 2>&1 | tee -a "$LOG"
+    - $NPM -v  2>&1 | tee -a "$LOG"
 
-    # Bersihkan node_modules yg aneh supaya install bersih
-    - rm -rf node_modules package-lock.json 2>/dev/null || true
+    # Bersihkan supaya fresh
+    - rm -rf node_modules 2>/dev/null || true
 
-    # BUTUH devDependencies saat build (Tailwind/PostCSS, dsb)
-    - $NPM ci --include=dev                        2>&1 | tee -a "$LOG"
+    # TIDAK pakai 'ci' karena tidak ada package-lock.json
+    # Sertakan devDependencies (Tailwind v4/PostCSS dipakai saat build)
+    - $NPM install --include=dev                 2>&1 | tee -a "$LOG"
 
-    # Prisma jalankan via node absolut agar enggak kena masalah PATH/permission
-    - $NODE ./node_modules/.bin/prisma --version   2>&1 | tee -a "$LOG"
-    - $NODE ./node_modules/.bin/prisma generate    2>&1 | tee -a "$LOG"
+    # Prisma lokal via node absolut
+    - $NODE ./node_modules/.bin/prisma --version 2>&1 | tee -a "$LOG"
+    - $NODE ./node_modules/.bin/prisma generate  2>&1 | tee -a "$LOG"
     - $NODE ./node_modules/.bin/prisma migrate deploy 2>&1 | tee -a "$LOG" || true
 
-    # Build Next.js -> HARUS menciptakan folder .next/
-    - $NPM run build                               2>&1 | tee -a "$LOG"
+    # Build Next.js -> akan membuat folder .next/
+    - $NPM run build                             2>&1 | tee -a "$LOG"
 
     # Restart Passenger
     - mkdir -p tmp && touch tmp/restart.txt

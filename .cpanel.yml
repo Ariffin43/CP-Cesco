@@ -6,9 +6,14 @@ deployment:
     - export LOG="/home/cescoco/deploy.log"
 
     - echo "=== DEPLOY START $(date)" >> "$LOG"
+
     - npm ci --omit=dev            2>&1 | tee -a "$LOG"
-    - npx prisma generate          2>&1 | tee -a "$LOG"
-    - npm run migrate:deploy       2>&1 | tee -a "$LOG" || true
+
+    - ./node_modules/.bin/prisma --version         2>&1 | tee -a "$LOG"
+    - ./node_modules/.bin/prisma generate          2>&1 | tee -a "$LOG"
+    - ./node_modules/.bin/prisma migrate deploy    2>&1 | tee -a "$LOG" || true
+
     - npm run build                2>&1 | tee -a "$LOG"
+
     - mkdir -p tmp && touch tmp/restart.txt
     - echo "=== DEPLOY DONE  $(date)"  >> "$LOG"

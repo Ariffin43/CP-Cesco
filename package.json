@@ -5,8 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production next start -p $PORT",
+    "postinstall": "prisma generate",
+    "migrate:deploy": "prisma migrate deploy",
     "lint": "next lint"
+  },
+  "engines": {
+    "node": ">=18 <=22"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",

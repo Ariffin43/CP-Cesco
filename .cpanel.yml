@@ -1,22 +1,28 @@
 ---
 deployment:
   tasks:
-    - export NODE="/opt/cpanel/ea-nodejs20/bin/node"
-    - export NPM="/opt/cpanel/ea-nodejs20/bin/npm"
-    - export NPX="/opt/cpanel/ea-nodejs20/bin/npx"
-    - export PATH="/opt/cpanel/ea-nodejs20/bin:$PATH"
+    # --- gunakan Node/NPM dari nodevenv aplikasi ---
+    - export APP_ROOT="/home/cescoco/repositories/CP-Cesco"
+    - export NODE="$HOME/nodevenv/repositories/CP-Cesco/20/bin/node"
+    - export NPM="$HOME/nodevenv/repositories/CP-Cesco/20/bin/npm"
+    - export NPX="$HOME/nodevenv/repositories/CP-Cesco/20/bin/npx"
+    - export PATH="$HOME/nodevenv/repositories/CP-Cesco/20/bin:$PATH"
     - export NODE_ENV=production
     - export LOG="/home/cescoco/deploy.log"
 
     - echo "=== DEPLOY START $(date)" >> "$LOG"
 
-    - $NPM ci --include=dev                 2>&1 | tee -a "$LOG"
+    # BUTUH devDependencies (Tailwind/PostCSS) saat build
+    - $NPM ci --include=dev                       2>&1 | tee -a "$LOG"
 
-    - $NODE ./node_modules/.bin/prisma --version        2>&1 | tee -a "$LOG"
-    - $NODE ./node_modules/.bin/prisma generate         2>&1 | tee -a "$LOG"
-    - $NODE ./node_modules/.bin/prisma migrate deploy   2>&1 | tee -a "$LOG" || true
+    # Prisma lokal dijalankan lewat 'node' nodevenv
+    - $NODE ./node_modules/.bin/prisma --version  2>&1 | tee -a "$LOG"
+    - $NODE ./node_modules/.bin/prisma generate   2>&1 | tee -a "$LOG"
+    - $NODE ./node_modules/.bin/prisma migrate deploy 2>&1 | tee -a "$LOG" || true
 
-    - $NPM run build                         2>&1 | tee -a "$LOG"
+    # Build Next.js → akan membuat folder .next/
+    - $NPM run build                               2>&1 | tee -a "$LOG"
 
-    - mkdir -p tmp && touch tmp/restart.txt
+    # Restart Passenger
+    - mkdir -p "$APP_ROOT/tmp" && touch "$APP_ROOT/tmp/restart.txt"
     - echo "=== DEPLOY DONE $(date)" >> "$LOG"

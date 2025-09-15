@@ -653,7 +653,7 @@ export default function Projects() {
         projectName: String(row[iPName] ?? "").trim(),
         description: String(row[iDesc] ?? "").trim(),
         startDate: row[iStart]  ? toISOInput(row[iStart])  : "",
-        endDate:   row[iFinish] ? toISOInput(row[iFinish]) : "",
+        endDate: row[iFinish] ? toISOInput(row[iFinish]) : null,
         status: normalizeStatus(row[iStatus]),
         pic: row[iPIC] && String(row[iPIC]).trim() !== "" ? String(row[iPIC]).trim() : "-",
       };

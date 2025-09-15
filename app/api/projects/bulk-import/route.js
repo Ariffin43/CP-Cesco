@@ -5,10 +5,23 @@ import { normalizeStatus, parseDateOnly } from "@/lib/dateUtils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60; // beri napas utk transaksi besar
+export const maxDuration = 60;
 
-// helper kecil
 const norm = (v) => String(v ?? "").trim();
+
+function normalizeContractType(v) {
+  const t = norm(v);
+  if (!t) return null;
+  if (t === "LUMPSUM") return "LUMPSUM";
+  if (t === "DAILY_RATE" || t === "DAILY RATE") return "DAILY_RATE";
+  return null; // tak dikenal → jadikan null saja
+}
+
+function normalizeAddDuration(v) {
+  if (v === undefined || v === null || String(v).trim() === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
 
 export async function POST(req) {
   try {
@@ -22,6 +35,7 @@ export async function POST(req) {
 
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i] || {};
+
       const jobNo       = norm(r.jobNo);
       const customer    = norm(r.customer);
       const projectName = norm(r.projectName);
@@ -34,17 +48,26 @@ export async function POST(req) {
       }
 
       const start = parseDateOnly(r.startDate);
-      const end   = parseDateOnly(r.endDate);
-      if (!start || !end || end < start) {
-        errors.push({ index: i, error: "Tanggal tidak valid (YYYY-MM-DD) atau end < start." });
+      // endDate boleh kosong → null
+      const end = r.endDate ? parseDateOnly(r.endDate) : null;
+
+      if (!start) {
+        errors.push({ index: i, error: "Tanggal mulai (startDate) tidak valid/ kosong." });
+        continue;
+      }
+      if (end && end < start) {
+        errors.push({ index: i, error: "endDate tidak boleh < startDate." });
         continue;
       }
 
       const st = normalizeStatus(r.status);
-      if (!["Pending","Ongoing","Finish","Cancel"].includes(st)) {
+      if (!["Pending", "Ongoing", "Finish", "Cancel"].includes(st)) {
         errors.push({ index: i, error: "Status tidak valid." });
         continue;
       }
+
+      const contract_type = normalizeContractType(r.contract_type);
+      const add_duration  = normalizeAddDuration(r.add_duration);
 
       mapped.push({
         jobNo,
@@ -55,8 +78,8 @@ export async function POST(req) {
         endDate: end,
         status: st,
         pic,
-        contract_type: r.contract_type ?? null,
-        add_duration:  r.add_duration ?? null,
+        contract_type,
+        add_duration,
       });
     }
 
@@ -66,13 +89,15 @@ export async function POST(req) {
 
     const CHUNK = 300;
     let inserted = 0;
-
     for (let i = 0; i < mapped.length; i += CHUNK) {
       const slice = mapped.slice(i, i + CHUNK);
-      const res = await prisma.project.createMany({
-        data: slice,
-      });
-      inserted += res.count;
+      try {
+        const res = await prisma.project.createMany({ data: slice });
+        inserted += res.count;
+      } catch (e) {
+        // jika ada error DB di chunk ini, catat secara umum
+        errors.push({ indexRange: [i, Math.min(i + CHUNK - 1, mapped.length - 1)], error: `DB error: ${e?.message || e}` });
+      }
     }
 
     return NextResponse.json(

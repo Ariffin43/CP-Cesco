@@ -1,5 +1,5 @@
-import { createServer } from "http";
-import next from "next";
+const { createServer } = require("http");
+const next = require("next");
 
 const port = process.env.PORT || 3000;
 const app = next({ dev: false });

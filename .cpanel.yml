@@ -1,28 +1,29 @@
 ---
 deployment:
   tasks:
-    # --- gunakan Node/NPM dari nodevenv aplikasi ---
-    - export APP_ROOT="/home/cescoco/repositories/CP-Cesco"
-    - export NODE="$HOME/nodevenv/repositories/CP-Cesco/20/bin/node"
-    - export NPM="$HOME/nodevenv/repositories/CP-Cesco/20/bin/npm"
-    - export NPX="$HOME/nodevenv/repositories/CP-Cesco/20/bin/npx"
-    - export PATH="$HOME/nodevenv/repositories/CP-Cesco/20/bin:$PATH"
+    # Pakai Node/NPM dari nodevenv aplikasi (bukan /opt/cpanel/ea-nodejs..)
+    - export NODE="/home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/node"
+    - export NPM="/home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/npm"
+    - export PATH="/home/cescoco/nodevenv/repositories/CP-Cesco/20/bin:$PATH"
     - export NODE_ENV=production
     - export LOG="/home/cescoco/deploy.log"
 
     - echo "=== DEPLOY START $(date)" >> "$LOG"
 
-    # BUTUH devDependencies (Tailwind/PostCSS) saat build
-    - $NPM ci --include=dev                       2>&1 | tee -a "$LOG"
+    # Bersihkan node_modules yg aneh supaya install bersih
+    - rm -rf node_modules package-lock.json 2>/dev/null || true
 
-    # Prisma lokal dijalankan lewat 'node' nodevenv
-    - $NODE ./node_modules/.bin/prisma --version  2>&1 | tee -a "$LOG"
-    - $NODE ./node_modules/.bin/prisma generate   2>&1 | tee -a "$LOG"
+    # BUTUH devDependencies saat build (Tailwind/PostCSS, dsb)
+    - $NPM ci --include=dev                        2>&1 | tee -a "$LOG"
+
+    # Prisma jalankan via node absolut agar enggak kena masalah PATH/permission
+    - $NODE ./node_modules/.bin/prisma --version   2>&1 | tee -a "$LOG"
+    - $NODE ./node_modules/.bin/prisma generate    2>&1 | tee -a "$LOG"
     - $NODE ./node_modules/.bin/prisma migrate deploy 2>&1 | tee -a "$LOG" || true
 
-    # Build Next.js → akan membuat folder .next/
+    # Build Next.js -> HARUS menciptakan folder .next/
     - $NPM run build                               2>&1 | tee -a "$LOG"
 
     # Restart Passenger
-    - mkdir -p "$APP_ROOT/tmp" && touch "$APP_ROOT/tmp/restart.txt"
+    - mkdir -p tmp && touch tmp/restart.txt
     - echo "=== DEPLOY DONE $(date)" >> "$LOG"

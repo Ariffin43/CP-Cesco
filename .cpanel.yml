@@ -3,9 +3,12 @@ deployment:
   tasks:
     - export PATH="/opt/cpanel/ea-nodejs20/bin:$PATH"
     - export NODE_ENV=production
-    - npm ci
-    - npx prisma generate
-    - npm run migrate:deploy || true
-    - npm run build
-    - mkdir -p tmp
-    - touch tmp/restart.txt
+    - export LOG="/home/cescoco/deploy.log"
+
+    - echo "=== DEPLOY START $(date)" >> "$LOG"
+    - npm ci --omit=dev            2>&1 | tee -a "$LOG"
+    - npx prisma generate          2>&1 | tee -a "$LOG"
+    - npm run migrate:deploy       2>&1 | tee -a "$LOG" || true
+    - npm run build                2>&1 | tee -a "$LOG"
+    - mkdir -p tmp && touch tmp/restart.txt
+    - echo "=== DEPLOY DONE  $(date)"  >> "$LOG"

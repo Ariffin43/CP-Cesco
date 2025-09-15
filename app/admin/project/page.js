@@ -627,6 +627,7 @@ export default function Projects() {
       Swal.fire({ icon: "error", title: "Gagal Import", text: "File tidak ada isinya!" });
       return;
     }
+
     const header = previewData[0].map((h) => String(h).trim());
     const rows = previewData.slice(1);
     if (!rows.length) {
@@ -643,22 +644,20 @@ export default function Projects() {
     const iStatus = findIndexByAliases(header, "STATUS");
     const iPIC    = findIndexByAliases(header, "PIC");
 
-    const imported = rows
-      .map((row) => {
-        const hasAny = row?.some((v) => v !== null && v !== undefined && String(v).trim() !== "");
-        if (!hasAny) return null;
-        return {
-          jobNo: String(row[iJobNo] ?? "").trim(),
-          customer: String(row[iCust] ?? "").trim(),
-          projectName: String(row[iPName] ?? "").trim(),
-          description: String(row[iDesc] ?? "").trim(),
-          startDate: row[iStart]  ? toISOInput(row[iStart])  : "",
-          endDate:   row[iFinish] ? toISOInput(row[iFinish]) : "",
-          status: normalizeStatus(row[iStatus]),
-          pic: row[iPIC] && String(row[iPIC]).trim() !== "" ? String(row[iPIC]).trim() : "-",
-        };
-      })
-      .filter(Boolean);
+    const imported = rows.map((row) => {
+      const hasAny = row?.some((v) => v !== null && v !== undefined && String(v).trim() !== "");
+      if (!hasAny) return null;
+      return {
+        jobNo: String(row[iJobNo] ?? "").trim(),
+        customer: String(row[iCust] ?? "").trim(),
+        projectName: String(row[iPName] ?? "").trim(),
+        description: String(row[iDesc] ?? "").trim(),
+        startDate: row[iStart]  ? toISOInput(row[iStart])  : "",
+        endDate:   row[iFinish] ? toISOInput(row[iFinish]) : "",
+        status: normalizeStatus(row[iStatus]),
+        pic: row[iPIC] && String(row[iPIC]).trim() !== "" ? String(row[iPIC]).trim() : "-",
+      };
+    }).filter(Boolean);
 
     if (!imported.length) {
       Swal.fire({ icon: "error", title: "Gagal Import", text: "Semua baris kosong." });
@@ -667,23 +666,31 @@ export default function Projects() {
 
     try {
       setUploading(true);
+      setUploadProgress(0);
 
-      const res = await fetch("/api/projects/bulk-import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(imported),
-      });
-      if (!res.ok) {
-        const msg = await res.text().catch(() => "");
-        throw new Error(msg || `HTTP ${res.status}`);
+      const CHUNK = 200;
+      let done = 0;
+
+      for (let i = 0; i < imported.length; i += CHUNK) {
+        const slice = imported.slice(i, i + CHUNK);
+        const res = await fetch("/api/projects/bulk-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(slice),
+        });
+        if (!res.ok) {
+          const msg = await res.text().catch(() => "");
+          throw new Error(msg || `HTTP ${res.status}`);
+        }
+        done += slice.length;
+        setUploadProgress(Math.round((done / imported.length) * 100));
       }
 
       await loadProjects();
-
       setIsImportModalOpen(false);
       setPreviewData([]);
       setUploading(false);
-      setUploadProgress(0);
+      setUploadProgress(100);
       setFileName("");
 
       Swal.fire({
@@ -698,7 +705,6 @@ export default function Projects() {
       Swal.fire({ icon: "error", title: "Gagal Import", text: err.message || "Terjadi kesalahan." });
     }
   };
-
 
   /* ---------- Derived: filtered + paginated ---------- */
   const filtered = useMemo(() => {

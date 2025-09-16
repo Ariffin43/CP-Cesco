@@ -3,12 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.js",
     "build": "next build",
-    "start": "next start",
-    "migrate": "prisma migrate deploy",
-    "generate": "prisma generate",
-    "deploy": "npm run generate && npm run migrate && npm run build"
+    "start": "NODE_ENV=production node server.js"
   },
   "engines": {
     "node": ">=18 <=22"

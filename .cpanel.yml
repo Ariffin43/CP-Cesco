@@ -1,21 +1,26 @@
 ---
 deployment:
   tasks:
-    # (Opsional) log kecil biar kelihatan di panel
-    - 'echo "===== Deploy started at $(date) ====="'
+    - 'echo "===== Deploy started $(date) ====="'
+    - 'echo "[1/5] Copy source -> /home/cescoco/apps/cesco"'
 
-    # 1) Install deps (pakai CI untuk lockfile; fallback ke install kalau CI gagal)
-    - 'npm ci || npm install'
+    - 'cd /home/cescoco/repositories/CP-Cesco && tar -cf /home/cescoco/app_src.tgz --exclude=node_modules --exclude=.next --exclude=tmp --exclude=.git --exclude=.env .'
+    - 'rm -rf /home/cescoco/apps/cesco/*'
+    - 'tar -xf /home/cescoco/app_src.tgz -C /home/cescoco/apps/cesco'
+    - 'rm -f /home/cescoco/app_src.tgz'
 
-    # 2) Prisma: generate client + jalankan migrasi di server
-    - 'npx prisma generate'
-    - 'npx prisma migrate deploy'
+    - 'echo "[2/5] npm install (or ci)"'
+    - 'cd /home/cescoco/apps/cesco && npm ci || npm install'
 
-    # 3) Build Next.js (production)
-    - 'npm run build'
+    - 'echo "[3/5] Prisma generate & migrate"'
+    - 'cd /home/cescoco/apps/cesco && npx prisma generate'
+    - 'cd /home/cescoco/apps/cesco && npx prisma migrate deploy'
 
-    # 4) Restart Passenger (Node.js App) dengan sentuh restart.txt
-    - 'mkdir -p tmp'
-    - 'touch tmp/restart.txt'
+    - 'echo "[4/5] Build Next.js"'
+    - 'cd /home/cescoco/apps/cesco && npm run build'
 
-    - 'echo "===== Deploy finished at $(date) ====="'
+    - 'echo "[5/5] Restart Passenger"'
+    - 'mkdir -p /home/cescoco/apps/cesco/tmp'
+    - 'touch /home/cescoco/apps/cesco/tmp/restart.txt'
+
+    - 'echo "===== Deploy finished $(date) ====="'

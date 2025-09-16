@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import {
   FaBars,
   FaUser,
@@ -25,6 +26,55 @@ const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
+
+// ===== Image helpers (mengganti <img> dengan <Image/>) =====
+const FALLBACK_IMG =
+  "https://via.placeholder.com/800x600.png?text=Image+Not+Available";
+
+function isInternalPath(src) {
+  if (!src) return false;
+  return src.startsWith("/");
+}
+
+function isBlobOrData(src) {
+  if (!src) return false;
+  return src.startsWith("blob:") || src.startsWith("data:");
+}
+
+function SafeImage({ src, alt, className, sizes }) {
+  const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMG);
+  const unoptimized = isBlobOrData(imgSrc) || !isInternalPath(imgSrc);
+
+  return (
+    <Image
+      src={imgSrc || FALLBACK_IMG}
+      alt={alt || "image"}
+      fill
+      sizes={
+        sizes || "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      }
+      className={className}
+      unoptimized={unoptimized}
+      onError={() => setImgSrc(FALLBACK_IMG)}
+    />
+  );
+}
+
+function SafePreviewImage({ src, alt, className, onOk, onFail }) {
+  const [imgSrc] = useState(src);
+  // Preview biasanya blob/data → unoptimized
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt || "preview"}
+      fill
+      unoptimized
+      className={className}
+      onLoadingComplete={() => onOk && onOk()}
+      onError={() => onFail && onFail()}
+    />
+  );
+}
 
 export default function Gallery() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -57,7 +107,10 @@ export default function Gallery() {
     (async () => {
       try {
         const res = await fetch("/api/auth/me", { cache: "no-store" });
-        if (!res.ok) { setRole(null); return; }
+        if (!res.ok) {
+          setRole(null);
+          return;
+        }
         const data = await res.json();
         setRole(data?.user?.role ?? null);
       } catch {
@@ -67,7 +120,7 @@ export default function Gallery() {
   }, []);
 
   /* ========================= Fetch items ========================= */
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/gallery", { cache: "no-store" });
@@ -79,9 +132,11 @@ export default function Gallery() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   /* ========================= Derived ========================= */
   const filtered = useMemo(() => {
@@ -126,7 +181,7 @@ export default function Gallery() {
     if (!file) return;
 
     const allowed = ["image/png", "image/jpeg"];
-    const maxBytes = 30 * 1024 * 1024;
+    const maxBytes = 5 * 1024 * 1024; // 5 MB (sinkron dgn pesan)
     if (!allowed.includes(file.type)) {
       Swal.fire("Validation", "Only PNG/JPEG are allowed.", "warning");
       return;
@@ -279,7 +334,9 @@ export default function Gallery() {
   /* ========================= Row actions ========================= */
   const startEdit = (row) => {
     setEditing(row);
-    setForms([{ title: row.title || "", file: null, preview: row.imageUrl || "", imgOk: true }]);
+    setForms([
+      { title: row.title || "", file: null, preview: row.imageUrl || "", imgOk: true },
+    ]);
     setIsModalOpen(true);
   };
 
@@ -347,12 +404,16 @@ export default function Gallery() {
     if (isModalOpen) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = prev; };
+      return () => {
+        document.body.style.overflow = prev;
+      };
     }
   }, [isModalOpen]);
 
   return (
-    <div className={`min-h-screen flex flex-col bg-gradient-to-br from-emerald-50 to-white ${poppins.className}`}>
+    <div
+      className={`min-h-screen flex flex-col bg-gradient-to-br from-emerald-50 to-white ${poppins.className}`}
+    >
       {/* NAVBAR */}
       <nav className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-between px-4 py-3 shadow-lg sticky top-0 z-50">
         <Sidebar
@@ -361,11 +422,19 @@ export default function Gallery() {
           onClose={() => setSidebarOpen(false)}
           role={role}
         />
-        {sidebarOpen && <div className="fixed inset-0 bg-black/30 z-30" onClick={() => setSidebarOpen(false)} />}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         <button className="md:hidden p-2" onClick={() => setSidebarOpen((s) => !s)}>
           <FaBars size={22} />
         </button>
-        <button className="hidden md:block p-2 cursor-pointer" onClick={() => setSidebarOpen((s) => !s)}>
+        <button
+          className="hidden md:block p-2 cursor-pointer"
+          onClick={() => setSidebarOpen((s) => !s)}
+        >
           <FaBars size={22} />
         </button>
         <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide">Admin Dashboard</h1>
@@ -454,7 +523,11 @@ export default function Gallery() {
 
           {/* Grid */}
           {loading ? (
-            <div className={`grid gap-4 ${dense ? "sm:grid-cols-3 lg:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}>
+            <div
+              className={`grid gap-4 ${
+                dense ? "sm:grid-cols-3 lg:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              }`}
+            >
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="h-64 rounded-2xl border bg-white overflow-hidden animate-pulse">
                   <div className="h-36 bg-gray-200" />
@@ -484,7 +557,13 @@ export default function Gallery() {
               </button>
             </div>
           ) : (
-            <div className={`grid gap-4 ${dense ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}>
+            <div
+              className={`grid gap-4 ${
+                dense
+                  ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              }`}
+            >
               {filtered.map((g) => (
                 <div
                   key={g.id}
@@ -500,16 +579,8 @@ export default function Gallery() {
                     />
                   </div>
 
-                  <div className="w-full aspect-[4/3] bg-gray-100 overflow-hidden">
-                    <img
-                      src={g.imageUrl}
-                      alt={g.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src =
-                          "https://via.placeholder.com/600x400.png?text=Image+Not+Available";
-                      }}
-                    />
+                  <div className="w-full aspect-[4/3] bg-gray-100 overflow-hidden relative">
+                    <SafeImage src={g.imageUrl} alt={g.title} className="object-cover" />
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
                     <h3 className="font-semibold text-gray-900 line-clamp-2">{g.title}</h3>
@@ -544,11 +615,7 @@ export default function Gallery() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
           {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black/40"
-            onClick={closeModal}
-            aria-hidden="true"
-          />
+          <div className="fixed inset-0 bg-black/40" onClick={closeModal} aria-hidden="true" />
 
           {/* Card */}
           <div className="relative z-10 bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
@@ -607,14 +674,12 @@ export default function Gallery() {
                             className="rounded-2xl border-2 border-dashed border-gray-200 hover:border-emerald-300 transition cursor-pointer p-4 flex flex-col items-center justify-center text-center"
                           >
                             <FaImage className="text-gray-500 mb-2" size={36} />
-                            <p className="text-gray-700 font-medium">
-                              Drag & drop your image here
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                              or click to choose a file (PNG/JPEG, max 5MB)
-                            </p>
+                            <p className="text-gray-700 font-medium">Drag & drop your image here</p>
+                            <p className="text-gray-500 text-sm">or click to choose a file (PNG/JPEG, max 5MB)</p>
                             <input
-                              ref={(el) => { if (el) fileInputRefs.current[idx] = el; }}
+                              ref={(el) => {
+                                if (el) fileInputRefs.current[idx] = el;
+                              }}
                               type="file"
                               accept="image/png,image/jpeg"
                               className="hidden"
@@ -629,22 +694,22 @@ export default function Gallery() {
                       </div>
 
                       {f.preview && (
-                        <div className="mt-3 rounded-xl overflow-hidden border">
-                          <img
+                        <div className="mt-3 rounded-xl overflow-hidden border relative h-56">
+                          <SafePreviewImage
                             src={f.preview}
                             alt={`Preview ${idx + 1}`}
-                            className="w-full max-h-56 object-cover"
-                            onError={() =>
-                              setForms((arr) => {
-                                const next = [...arr];
-                                next[idx] = { ...next[idx], imgOk: false };
-                                return next;
-                              })
-                            }
-                            onLoad={() =>
+                            className="object-cover"
+                            onOk={() =>
                               setForms((arr) => {
                                 const next = [...arr];
                                 next[idx] = { ...next[idx], imgOk: true };
+                                return next;
+                              })
+                            }
+                            onFail={() =>
+                              setForms((arr) => {
+                                const next = [...arr];
+                                next[idx] = { ...next[idx], imgOk: false };
                                 return next;
                               })
                             }

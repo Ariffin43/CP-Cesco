@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "migrate": "prisma migrate deploy",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "deploy": "npm run generate && npm run migrate && npm run build"
   },
   "engines": {
     "node": ">=18 <=22"

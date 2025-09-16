@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node server.js",
-    "lint": "next lint"
+    "start": "next start",
+    "migrate": "prisma migrate deploy",
+    "generate": "prisma generate"
   },
   "engines": {
     "node": ">=18 <=22"

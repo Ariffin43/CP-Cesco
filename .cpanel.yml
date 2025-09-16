@@ -1,0 +1,8 @@
+deployment:
+  tasks:
+    - export APP_ROOT=/home/cescoco/repositories/CP-Cesco
+    - source /home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/activate && cd $APP_ROOT && npm ci
+    - source /home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/activate && cd $APP_ROOT && npm run prisma:generate
+    - source /home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/activate && cd $APP_ROOT && npm run migrate:deploy || true
+    - source /home/cescoco/nodevenv/repositories/CP-Cesco/20/bin/activate && cd $APP_ROOT && npm run build
+    - /bin/touch $APP_ROOT/tmp/restart.txt

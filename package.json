@@ -6,9 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "node server.js",
-    "postinstall": "prisma generate && prisma migrate deploy && next build",
-    "migrate:deploy": "prisma migrate deploy",
-    "seed": "node prisma/seed.js"
+    "postinstall": "prisma generate && next build",
+    "db:migrate": "prisma migrate deploy"
   },
   "engines": {
     "node": ">=18 <=23"

@@ -1,8 +1,10 @@
 ---
 deployment:
   tasks:
+    - export PATH="$HOME/nodevenv/repositories/CP-Cesco/20/bin:$PATH"
     - export NODE_ENV=production
-    - npm ci
+    - export NPM_CONFIG_PRODUCTION=false
+    - npm ci --include=dev --no-audit --no-fund || npm install --include=dev --no-audit --no-fund
     - npx prisma generate
     - npx prisma migrate deploy
     - npm run build

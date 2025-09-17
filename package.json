@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "NODE_ENV=production node server.js",
-    "postinstall": "prisma generate",
-    "migrate:deploy": "prisma migrate deploy"
+    "start": "node server.js",
+    "postinstall": "prisma generate && prisma migrate deploy && next build",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed": "node prisma/seed.js"
   },
   "engines": {
     "node": ">=18 <=23"

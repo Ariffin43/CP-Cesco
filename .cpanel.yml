@@ -1,5 +1,19 @@
 ---
 deployment:
   tasks:
-  - mkdir -p tmp
-  - touch tmp/restart.txt
+    # inject ENV dari file server
+    - set -a; . /home/cescoco/app_envs/cesco.env; set +a
+
+    # pakai Node milik app
+    - export PATH="$HOME/nodevenv/repositories/CP-Cesco/20/bin:$PATH"
+
+    # install deps (termasuk devDependencies), lebih tahan error
+    - npm ci --include=dev --no-audit --no-fund || npm install --include=dev --no-audit --no-fund
+
+    # prisma client & build next (tanpa migrate supaya build gak gagal)
+    - npx prisma generate
+    - npm run build
+
+    # restart Passenger
+    - mkdir -p tmp
+    - touch tmp/restart.txt

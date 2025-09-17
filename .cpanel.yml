@@ -1,8 +1,10 @@
+---
 deployment:
   tasks:
-  - export DEPLOYPATH=/home/cescoco/repositories/CP-Cesco
-  - cd $DEPLOYPATH
-  - /opt/cpanel/ea-nodejs20/bin/npm install
-  - /opt/cpanel/ea-nodejs20/bin/npx prisma generate
-  - /opt/cpanel/ea-nodejs20/bin/npx prisma migrate deploy
-  - /opt/cpanel/ea-nodejs20/bin/npm run build
+    - export NODE_ENV=production
+    - npm ci
+    - npx prisma generate
+    - npx prisma migrate deploy
+    - npm run build
+    - mkdir -p tmp
+    - touch tmp/restart.txt

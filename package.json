@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
-    "build": "next build",
-    "start": "next start"
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "NODE_ENV=production node server.js",
+    "postinstall": "prisma generate",
+    "migrate:deploy": "prisma migrate deploy"
   },
   "engines": {
-    "node": ">=18 <=22"
+    "node": ">=18 <=23"
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",
